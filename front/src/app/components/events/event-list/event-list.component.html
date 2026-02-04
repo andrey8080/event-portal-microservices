@@ -1,0 +1,90 @@
+<div class="container">
+    <div class="row align-items-center mb-4">
+        <div class="col-md-6">
+            <h1>События</h1>
+        </div>
+        <div class="col-md-6 text-md-end">
+            <a *ngIf="isOrganizer" routerLink="/event-create" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i> Создать событие
+            </a>
+        </div>
+    </div>
+
+    <!-- Фильтры и поиск -->
+    <!-- <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" [(ngModel)]="searchQuery" placeholder="Поиск событий..."
+                        (input)="applyFilters()">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" [(ngModel)]="selectedCategory" (change)="applyFilters()">
+                        <option value="">Все категории</option>
+                        <option *ngFor="let category of categories" [value]="category.id">{{ category.name }}</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" [(ngModel)]="sortBy" (change)="applyFilters()">
+                        <option value="date-asc">Дата (по возрастанию)</option>
+                        <option value="date-desc">Дата (по убыванию)</option>
+                        <option value="price-asc">Цена (от низкой к высокой)</option>
+                        <option value="price-desc">Цена (от высокой к низкой)</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-secondary w-100" (click)="resetFilters()">
+                        <i class="bi bi-x-circle me-1"></i> Сбросить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div> -->
+
+    <div *ngIf="loading" class="text-center my-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Загрузка...</span>
+        </div>
+    </div>
+
+    <div *ngIf="!loading && events.length === 0" class="alert alert-info">
+        События не найдены
+    </div>
+
+    <div *ngIf="error" class="alert alert-danger">
+        {{ error }}
+    </div>
+
+    <div class="row">
+        <div *ngFor="let event of events" class="col-md-4 mb-4">
+            <div class="card featured-event-card h-100">
+                <div class="card-img-overlay-container">
+                    <!-- <img [src]="event.images && event.images.length > 0 ? event.images[0] : 'assets/event-placeholder.jpg'"
+                        class="card-img-top" alt="{{ event.title }}" style="height: 200px; object-fit: cover;"> -->
+                    <div class="card-img-overlay-top">
+                        <span class="badge bg-primary price-badge">{{ event.price > 0 ? event.price + ' ₽' :
+                            'Бесплатно' }}</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ event.title }}</h5>
+                    <p class="card-text text-muted">
+                        <i class="bi bi-geo-alt me-1"></i>{{ event.location.address }}
+                    </p>
+                    <p class="card-text">{{ event.description | slice:0:100 }}{{ event.description.length > 100
+                        ? '...' : '' }}</p>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <p class="mb-0 text-primary">
+                            <i class="bi bi-calendar3 me-1"></i>{{ event.startDate | date:'dd.MM.yyyy' }}
+                        </p>
+                        <span class="badge bg-secondary">{{ event.registeredParticipants || 0 }}/{{
+                            event.maxParticipants || 'не ограничено' }}</span>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-top-0">
+                    <a [routerLink]="['/events', event.id]" class="btn btn-sm btn-primary w-100">Подробнее</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

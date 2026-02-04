@@ -1,0 +1,449 @@
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3 col-lg-2">
+            <div class="sidebar p-3 bg-white shadow-sm rounded">
+                <h5 class="sidebar-title mb-3 border-bottom pb-2">Панель администратора</h5>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" [class.active]="activeTab === 'dashboard'"
+                            (click)="setActiveTab('dashboard')">
+                            <i class="bi bi-speedometer2 me-2"></i> Обзор
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" [class.active]="activeTab === 'users'" (click)="setActiveTab('users')">
+                            <i class="bi bi-people me-2"></i> Пользователи
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" [class.active]="activeTab === 'events'" (click)="setActiveTab('events')">
+                            <i class="bi bi-calendar-event me-2"></i> События
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" [class.active]="activeTab === 'reports'" (click)="setActiveTab('reports')">
+                            <i class="bi bi-graph-up me-2"></i> Отчеты
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" routerLink="/">
+                            <i class="bi bi-house me-2"></i> На главную
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main content -->
+        <div class="col-md-9 col-lg-10">
+            <!-- Dashboard overview -->
+            <div *ngIf="activeTab === 'dashboard'" class="admin-content">
+                <h2 class="mb-4">Статистика платформы</h2>
+                <div class="row">
+                    <div class="col-md-4 mb-4">
+                        <div class="card stats-card h-100">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <h5 class="card-title">Всего пользователей</h5>
+                                        <h2 class="mt-2 mb-0">{{ statistics.totalUsers || 0 }}</h2>
+                                    </div>
+                                    <i class="bi bi-people-fill fs-1 text-primary"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="card stats-card h-100">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <h5 class="card-title">Всего событий</h5>
+                                        <h2 class="mt-2 mb-0">{{ statistics.totalEvents || 0 }}</h2>
+                                    </div>
+                                    <i class="bi bi-calendar-event-fill fs-1 text-success"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="card stats-card h-100">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <h5 class="card-title">Активных билетов</h5>
+                                        <h2 class="mt-2 mb-0">{{ statistics.activeTickets || 0 }}</h2>
+                                    </div>
+                                    <i class="bi bi-ticket-perforated-fill fs-1 text-info"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Последние регистрации</h5>
+                            </div>
+                            <div class="card-body">
+                                <div *ngIf="isLoading" class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Загрузка...</span>
+                                    </div>
+                                </div>
+                                <div *ngIf="!isLoading && latestUsers.length === 0" class="text-center">
+                                    <p>Нет данных для отображения</p>
+                                </div>
+                                <ul *ngIf="!isLoading && latestUsers.length > 0" class="list-group list-group-flush">
+                                    <li *ngFor="let user of latestUsers" class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>{{ user.name }}</strong>
+                                                <div class="text-muted">{{ user.email }}</div>
+                                            </div>
+                                            <span class="badge bg-primary">{{ user.role }}</span>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Ближайшие события</h5>
+                            </div>
+                            <div class="card-body">
+                                <div *ngIf="isLoading" class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Загрузка...</span>
+                                    </div>
+                                </div>
+                                <div *ngIf="!isLoading && upcomingEvents.length === 0" class="text-center">
+                                    <p>Нет данных для отображения</p>
+                                </div>
+                                <ul *ngIf="!isLoading && upcomingEvents.length > 0" class="list-group list-group-flush">
+                                    <li *ngFor="let event of upcomingEvents" class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>{{ event.title }}</strong>
+                                                <div class="text-muted">{{ event.startDate | date:'dd.MM.yyyy, HH:mm' }}
+                                                </div>
+                                            </div>
+                                            <a [routerLink]="['/events', event.id]"
+                                                class="btn btn-sm btn-outline-primary">Подробнее</a>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users management -->
+            <div *ngIf="activeTab === 'users'" class="admin-content">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>Управление пользователями</h2>
+                    <button class="btn btn-primary" (click)="openAddUserModal()">
+                        <i class="bi bi-plus-circle me-2"></i> Добавить пользователя
+                    </button>
+                </div>
+
+                <!-- Search and filter users -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" placeholder="Поиск пользователей..."
+                                    [(ngModel)]="userSearchTerm" (input)="filterUsers()">
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" [(ngModel)]="userRoleFilter" (change)="filterUsers()">
+                                    <option value="all">Все роли</option>
+                                    <option value="PARTICIPANT">Участники</option>
+                                    <option value="ORGANIZER">Организаторы</option>
+                                    <option value="ADMIN">Администраторы</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User table -->
+                <div class="card">
+                    <div class="card-body">
+                        <div *ngIf="isLoadingUsers" class="text-center my-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Загрузка...</span>
+                            </div>
+                        </div>
+                        <div *ngIf="!isLoadingUsers && filteredUsers.length === 0" class="text-center my-4">
+                            <p>Нет пользователей для отображения</p>
+                        </div>
+                        <div *ngIf="!isLoadingUsers && filteredUsers.length > 0" class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Имя</th>
+                                        <th>Email</th>
+                                        <th>Роль</th>
+                                        <th>Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr *ngFor="let user of filteredUsers">
+                                        <td>{{ user.id }}</td>
+                                        <td>{{ user.name }}</td>
+                                        <td>{{ user.email }}</td>
+                                        <td>
+                                            <select class="form-select form-select-sm" [(ngModel)]="user.role"
+                                                (change)="changeUserRole(user)">
+                                                <option value="PARTICIPANT">Участник</option>
+                                                <option value="ORGANIZER">Организатор</option>
+                                                <option value="ADMIN">Администратор</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary me-1"
+                                                (click)="editUser(user)">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" (click)="deleteUser(user)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Events management -->
+            <div *ngIf="activeTab === 'events'" class="admin-content">
+                <h2 class="mb-4">Управление событиями</h2>
+
+                <!-- Search and filter events -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" placeholder="Поиск событий..."
+                                    [(ngModel)]="eventSearchTerm" (input)="filterEvents()">
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-select" [(ngModel)]="eventStatusFilter" (change)="filterEvents()">
+                                    <option value="all">Все события</option>
+                                    <option value="upcoming">Предстоящие</option>
+                                    <option value="past">Прошедшие</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <a routerLink="/event-create" class="btn btn-primary w-100">
+                                    <i class="bi bi-plus-circle me-2"></i> Создать событие
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Events grid -->
+                <div class="row">
+                    <div *ngFor="let event of filteredEvents" class="col-md-6 mb-4">
+                        <div class="card h-100 event-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <h5 class="card-title">{{ event.title }}</h5>
+                                    <span class="badge" [ngClass]="isPastEvent(event) ? 'bg-secondary' : 'bg-success'">
+                                        {{ isPastEvent(event) ? 'Завершено' : 'Предстоящее' }}
+                                    </span>
+                                </div>
+                                <p class="card-text mb-2">{{ event.description | slice:0:100 }}{{
+                                    event.description.length > 100 ? '...' : '' }}</p>
+                                <div class="event-details mb-3">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <small><i class="bi bi-calendar"></i> {{ event.startDate | date:'dd.MM.yyyy'
+                                                }}</small>
+                                        </div>
+                                        <div class="col-6 text-end">
+                                            <small><i class="bi bi-people"></i> {{ event.registeredParticipants }}/{{
+                                                event.maxParticipants }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <a [routerLink]="['/events', event.id]" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye me-1"></i> Просмотр
+                                    </a>
+                                    <div>
+                                        <a [routerLink]="['/event-edit', event.id]"
+                                            class="btn btn-sm btn-outline-secondary me-2">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-danger" (click)="deleteEvent(event)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports section -->
+            <div *ngIf="activeTab === 'reports'" class="admin-content">
+                <h2 class="mb-4">Отчеты и статистика</h2>
+
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Статистика регистраций</h5>
+                                <button class="btn btn-sm btn-outline-primary"
+                                    (click)="downloadReport('registrations')">
+                                    <i class="bi bi-download me-1"></i> Скачать
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div *ngIf="isLoading" class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Загрузка...</span>
+                                    </div>
+                                </div>
+                                <div *ngIf="!isLoading && registrationStats.length === 0" class="text-center">
+                                    <p>Нет данных для отображения</p>
+                                </div>
+                                <ul *ngIf="!isLoading && registrationStats.length > 0"
+                                    class="list-group list-group-flush">
+                                    <li *ngFor="let stat of registrationStats" class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>{{ stat.month }}</strong>
+                                                <div class="text-muted">{{ stat.count }} регистраций</div>
+                                            </div>
+                                            <span class="badge bg-primary">{{ stat.percentage }}%</span>
+                                        </div>
+                                    </li>
+                                </ul>
+                                <!-- Registration statistics chart placeholder -->
+                                <div id="registrationsChart" style="height: 250px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Популярные события</h5>
+                                <button class="btn btn-sm btn-outline-primary"
+                                    (click)="downloadReport('popular-events')">
+                                    <i class="bi bi-download me-1"></i> Скачать
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <!-- Popular events chart placeholder -->
+                                <div id="popularEventsChart" style="height: 250px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12 mb-4">
+                        <div class="card">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Активность по дням</h5>
+                                <div>
+                                    <select class="form-select form-select-sm d-inline-block me-2" style="width: auto;">
+                                        <option value="7">Последние 7 дней</option>
+                                        <option value="30">Последние 30 дней</option>
+                                        <option value="90">Последние 90 дней</option>
+                                    </select>
+                                    <button class="btn btn-sm btn-outline-primary" (click)="downloadReport('activity')">
+                                        <i class="bi bi-download me-1"></i> Скачать
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <!-- Activity chart placeholder -->
+                                <div id="activityChart" style="height: 300px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Modal -->
+    <div class="modal fade" id="userModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="userModalLabel">{{ editingUser ? 'Редактировать пользователя' :
+                        'Добавить пользователя' }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form [formGroup]="userForm">
+                        <div class="mb-3">
+                            <label for="userName" class="form-label">Имя</label>
+                            <input type="text" class="form-control" id="userName" formControlName="name">
+                            <div *ngIf="userForm.get('name')?.invalid && userForm.get('name')?.touched"
+                                class="text-danger">
+                                Имя обязательно
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="userEmail" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="userEmail" formControlName="email">
+                            <div *ngIf="userForm.get('email')?.invalid && userForm.get('email')?.touched"
+                                class="text-danger">
+                                <div *ngIf="userForm.get('email')?.errors?.['required']">Email обязателен</div>
+                                <div *ngIf="userForm.get('email')?.errors?.['email']">Введите корректный email</div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="userPhone" class="form-label">Телефон</label>
+                            <input type="tel" class="form-control" id="userPhone" formControlName="phoneNumber">
+                        </div>
+                        <div class="mb-3">
+                            <label for="userRole" class="form-label">Роль</label>
+                            <select class="form-select" id="userRole" formControlName="role">
+                                <option value="PARTICIPANT">Участник</option>
+                                <option value="ORGANIZER">Организатор</option>
+                                <option value="ADMIN">Администратор</option>
+                            </select>
+                        </div>
+                        <div *ngIf="!editingUser" class="mb-3">
+                            <label for="userPassword" class="form-label">Пароль</label>
+                            <input type="password" class="form-control" id="userPassword" formControlName="password">
+                            <div *ngIf="userForm.get('password')?.invalid && userForm.get('password')?.touched"
+                                class="text-danger">
+                                <div *ngIf="userForm.get('password')?.errors?.['required']">Пароль обязателен</div>
+                                <div *ngIf="userForm.get('password')?.errors?.['minlength']">Пароль должен быть не менее
+                                    6 символов</div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" [disabled]="userForm.invalid" (click)="saveUser()">
+                        <span *ngIf="isSavingUser" class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        Сохранить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,183 @@
+<div class="home-container">
+    <!-- Hero section -->
+    <section class="hero-section bg-primary text-white p-5 mb-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-7" style="color: rgb(48, 48, 48);">
+                    <div *ngIf="currentUser">
+                        <h1 class="display-4 fw-bold">Добро пожаловать, {{ currentUser.name }}!</h1>
+                    </div>
+                    <div *ngIf="!currentUser">
+                        <h1 class="display-4 fw-bold">Найдите идеальное событие</h1>
+                    </div>
+                    <p class="lead">Исследуйте события, присоединяйтесь к сообществам и создавайте незабываемые
+                        впечатления</p>
+                    <div class="d-flex gap-3 mt-4">
+                        <a routerLink="/events" class="btn btn-light btn-lg">Обзор событий</a>
+                        <a routerLink="/event-create" *ngIf="isOrganizer" class="btn btn-outline-light btn-lg">Создать
+                            событие</a>
+                    </div>
+                </div>
+                <!-- <div class="col-md-5 d-none d-md-block">
+                    <img src="assets/event-hero-image.svg" class="img-fluid" alt="Events illustration">
+                </div> -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured events section -->
+    <section class="featured-events">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Предстоящие события</h2>
+                <a routerLink="/events" class="btn btn-outline-primary">Все события</a>
+            </div>
+
+            <div *ngIf="isLoading" class="text-center my-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Загрузка...</span>
+                </div>
+            </div>
+
+            <div *ngIf="!isLoading && featuredEvents.length === 0" class="text-center my-5">
+                <p>В данный момент нет доступных событий.</p>
+            </div>
+
+            <div *ngIf="!isLoading && featuredEvents.length > 0" class="row">
+                <div *ngFor="let event of featuredEvents" class="col-md-4 mb-4">
+                    <div class="card featured-event-card h-100">
+                        <div class="card-img-overlay-container">
+                            <!-- <img [src]="event.images && event.images.length > 0 ? event.images[0] : 'assets/event-placeholder.jpg'"
+                                class="card-img-top" alt="{{ event.title }}" style="height: 200px; object-fit: cover;"> -->
+                            <div class="card-img-overlay-top">
+                                <span class="badge bg-primary price-badge">{{ event.price > 0 ? event.price + ' ₽' :
+                                    'Бесплатно' }}</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">{{ event.title }}</h5>
+                            <p class="card-text text-muted">
+                                <i class="bi bi-geo-alt me-1"></i>{{ event.location.address }}
+                            </p>
+                            <p class="card-text">{{ event.description | slice:0:100 }}{{ event.description.length > 100
+                                ? '...' : '' }}</p>
+                            <div class="d-flex align-items-center justify-content-between">
+                                <p class="mb-0 text-primary">
+                                    <i class="bi bi-calendar3 me-1"></i>{{ event.startDate | date:'dd.MM.yyyy' }}
+                                </p>
+                                <span class="badge bg-secondary">{{ event.registeredParticipants }}/{{
+                                    event.maxParticipants }}</span>
+                            </div>
+                        </div>
+                        <div class="card-footer bg-white border-top-0">
+                            <a [routerLink]="['/events', event.id]" class="btn btn-sm btn-primary w-100">Подробнее</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How it works section -->
+    <section class="how-it-works bg-light">
+        <div class="container">
+            <div class="section-header">
+                <h2>Как это работает</h2>
+                <p>Просто и удобно для посетителей и организаторов</p>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <div class="step-card text-center">
+                        <div class="step-icon">
+                            <i class="bi bi-search"></i>
+                        </div>
+                        <h4>Найдите событие</h4>
+                        <p>Используйте поиск, чтобы найти интересующие вас мероприятия рядом с вами</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <div class="step-card text-center">
+                        <div class="step-icon">
+                            <i class="bi bi-ticket-perforated"></i>
+                        </div>
+                        <h4>Получите билет</h4>
+                        <p>Зарегистрируйтесь на событие и получите электронный билет с QR-кодом</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="step-card text-center">
+                        <div class="step-icon">
+                            <i class="bi bi-emoji-smile"></i>
+                        </div>
+                        <h4>Наслаждайтесь</h4>
+                        <p>Посетите мероприятие и не забудьте оставить отзыв о своих впечатлениях</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Categories section
+    <section class="categories py-5 bg-light">
+        <div class="container">
+            <h2 class="mb-4">Категории событий</h2>
+            <div class="row g-4">
+                <div class="col-6 col-md-4 col-lg-3" *ngFor="let category of categories">
+                    <a [routerLink]="['/events']" [queryParams]="{category: category.id}" class="text-decoration-none">
+                        <div class="card text-center category-card">
+                            <div class="card-body">
+                                <i class="{{ category.icon }} fs-1 text-primary"></i>
+                                <h5 class="mt-3 mb-0">{{ category.name }}</h5>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section> -->
+
+    <!-- Organizer promo section -->
+    <section class="organizer-promo bg-light">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h2>Станьте организатором</h2>
+                    <p class="mb-4">Создавайте, управляйте и продвигайте свои мероприятия на нашей платформе</p>
+                    <ul class="list-unstyled mb-4">
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Удобная панель
+                            управления событиями</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Статистика и отчеты
+                            по мероприятиям</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Инструменты для
+                            работы с участниками</li>
+                        <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> Возможность создания
+                            квизов и опросов</li>
+                    </ul>
+                    <div *ngIf="!isAuthenticated">
+                        <a routerLink="/register" class="btn btn-primary">
+                            <i class="bi bi-person-plus me-2"></i>Зарегистрироваться
+                        </a>
+                    </div>
+                    <div *ngIf="isAuthenticated && !isOrganizer">
+                        <button class="btn btn-primary" (click)="becomeOrganizer()">
+                            <i class="bi bi-briefcase me-2"></i>Стать организатором
+                        </button>
+                    </div>
+                    <div *ngIf="isAuthenticated && isOrganizer">
+                        <a routerLink="/event-create" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-2"></i>Создать событие
+                        </a>
+                        <a routerLink="/organizer" class="btn btn-outline-primary ms-3">
+                            <i class="bi bi-speedometer2 me-2"></i>Панель организатора
+                        </a>
+                    </div>
+                </div>
+                <!-- <div class="col-md-6 d-none d-md-block">
+                    <img src="assets/organizer-image.jpg" alt="Organizer" class="img-fluid">
+                </div> -->
+            </div>
+        </div>
+    </section>
+
+</div>

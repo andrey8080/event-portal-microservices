@@ -1,0 +1,10 @@
+<nav>
+    <!-- ...existing code... -->
+    <ul>
+        <li *ngIf="!currentUser"><a routerLink="/login">Войти</a></li>
+        <li *ngIf="!currentUser"><a routerLink="/register">Зарегистрироваться</a></li>
+        <li *ngIf="currentUser"><a routerLink="/profile">Личный кабинет</a></li>
+        <li *ngIf="currentUser"><a (click)="logout()">Выйти</a></li>
+    </ul>
+    <!-- ...existing code... -->
+</nav>

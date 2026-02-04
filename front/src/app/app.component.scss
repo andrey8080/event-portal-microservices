@@ -1,0 +1,23 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main {
+    flex: 1 0 auto;
+    padding: 20px 0;
+}
+
+.footer {
+    flex-shrink: 0;
+    margin-top: auto;
+}
+
+.navbar-brand {
+    font-weight: bold;
+}
+
+.active {
+    font-weight: 500;
+}

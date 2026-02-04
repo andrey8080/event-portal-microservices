@@ -1,0 +1,24 @@
+<header class="site-header">
+    <div class="container">
+        <div class="header-content">
+            <div class="logo">
+                <a routerLink="/">EventPortal</a>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a routerLink="/events">События</a></li>
+                    <li *ngIf="isAuthenticated"><a routerLink="/profile">Профиль</a></li>
+                    <li *ngIf="!isAuthenticated"><a routerLink="/login">Вход</a></li>
+                    <li *ngIf="!isAuthenticated"><a routerLink="/register">Регистрация</a></li>
+                    <li *ngIf="isAuthenticated && isOrganizer"><a routerLink="/organizer-dashboard">Панель
+                            организатора</a>
+                    </li>
+                    <li *ngIf="isAuthenticated && isAdmin"><a routerLink="/admin-dashboard">Админ-панель</a></li>
+                    <li *ngIf="isAuthenticated">
+                        <button class="btn btn-outline-secondary" (click)="authService.logout()">Выход</button>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</header>

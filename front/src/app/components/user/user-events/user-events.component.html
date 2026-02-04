@@ -1,0 +1,121 @@
+<div class="container mt-4">
+    <h1>Мои события</h1>
+
+    <div *ngIf="loading" class="text-center my-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">Загрузка...</span>
+        </div>
+    </div>
+
+    <div *ngIf="error" class="alert alert-danger">
+        {{ error }}
+    </div>
+
+    <div *ngIf="!loading">
+        <ul class="nav nav-tabs mb-4">
+            <li class="nav-item">
+                <a class="nav-link" [class.active]="activeTab === 'tickets'" (click)="setActiveTab('tickets')">
+                    Мои билеты
+                </a>
+            </li>
+            <li class="nav-item" *ngIf="createdEvents.length > 0">
+                <a class="nav-link" [class.active]="activeTab === 'created'" (click)="setActiveTab('created')">
+                    Организованные мной
+                </a>
+            </li>
+        </ul>
+
+        <!-- Билеты пользователя -->
+        <div *ngIf="activeTab === 'tickets'">
+            <div *ngIf="tickets.length === 0" class="alert alert-info">
+                У вас пока нет купленных билетов
+            </div>
+
+            <div *ngIf="tickets.length > 0" class="row">
+                <div *ngFor="let ticket of tickets" class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ ticket.eventTitle }}</h5>
+                            <p class="card-text">
+                                <i class="bi bi-calendar"></i> {{ ticket.eventDate | date:'dd.MM.yyyy' }}<br>
+                                <i class="bi bi-geo-alt"></i> {{ ticket.eventLocation }}<br>
+                                <i class="bi bi-ticket"></i> Билет: {{ ticket.ticketNumber }}<br>
+                                <i class="bi bi-tag"></i> Стоимость: {{ ticket.price | currency:'RUB':'символ':'1.0-0'
+                                }}<br>
+                                <i class="bi bi-clock"></i> Куплен: {{ ticket.purchaseDate | date:'dd.MM.yyyy' }}
+                            </p>
+                            <div class="d-grid gap-2">
+                                <button [routerLink]="['/tickets', ticket.id]" class="btn btn-primary">Просмотр
+                                    билета</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- События, созданные пользователем -->
+        <div *ngIf="activeTab === 'created'">
+            <div class="d-flex justify-content-between mb-3">
+                <h3>Организованные события</h3>
+                <button routerLink="/events/create" class="btn btn-primary">Создать новое событие</button>
+            </div>
+
+            <div *ngIf="createdEvents.length === 0" class="alert alert-info">
+                Вы пока не создали ни одного события
+            </div>
+
+            <div *ngIf="createdEvents.length > 0">
+                <h4>Предстоящие события</h4>
+                <div class="row mb-4">
+                    <div *ngFor="let event of upcomingEvents" class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ event.title }}</h5>
+                                <p class="card-text">
+                                    <i class="bi bi-calendar"></i> {{ event.date | date:'dd.MM.yyyy' }}<br>
+                                    <i class="bi bi-geo-alt"></i> {{ event.location }}
+                                </p>
+                                <div class="btn-group w-100">
+                                    <a [routerLink]="['/events', event.id]"
+                                        class="btn btn-sm btn-outline-primary">Просмотр</a>
+                                    <a [routerLink]="['/events', event.id, 'edit']"
+                                        class="btn btn-sm btn-outline-secondary">Редактировать</a>
+                                    <a [routerLink]="['/events', event.id, 'quiz', 'create']"
+                                        class="btn btn-sm btn-outline-info">Создать квиз</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div *ngIf="upcomingEvents.length === 0" class="col-12">
+                        <p>Нет предстоящих событий</p>
+                    </div>
+                </div>
+
+                <h4>Прошедшие события</h4>
+                <div class="row">
+                    <div *ngFor="let event of pastEvents" class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ event.title }}</h5>
+                                <p class="card-text">
+                                    <i class="bi bi-calendar"></i> {{ event.date | date:'dd.MM.yyyy' }}<br>
+                                    <i class="bi bi-geo-alt"></i> {{ event.location }}
+                                </p>
+                                <div class="btn-group w-100">
+                                    <a [routerLink]="['/events', event.id]"
+                                        class="btn btn-sm btn-outline-primary">Просмотр</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div *ngIf="pastEvents.length === 0" class="col-12">
+                        <p>Нет прошедших событий</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

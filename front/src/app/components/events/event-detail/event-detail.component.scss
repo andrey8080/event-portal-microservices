@@ -1,0 +1,60 @@
+// Event Detail page styles
+.card {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+// Star Rating Styles
+.star-rating {
+    font-size: 1.5rem;
+    color: #aaa;
+    cursor: pointer;
+
+    .bi {
+        margin-right: 5px;
+        transition: color 0.2s;
+
+        &.bi-star-fill {
+            color: #ffc107;
+        }
+    }
+}
+
+.star-rating-display {
+    font-size: 1.2rem;
+
+    .bi-star-fill {
+        color: #ffc107;
+    }
+}
+
+// Map container
+#event-map {
+    width: 100%;
+    min-height: 250px;
+    border-radius: 4px;
+}
+
+// Badge styles
+.badge {
+    font-size: 0.85rem;
+    padding: 0.35em 0.65em;
+}
+
+// Progress bar
+.progress {
+    height: 8px;
+    overflow: hidden;
+    background-color: #e9ecef;
+    border-radius: 50px;
+}
+
+// Feedback styles
+.feedback-item {
+    border-left: 3px solid #0d6efd;
+    transition: transform 0.2s;
+
+    &:hover {
+        transform: translateY(-3px);
+    }
+}

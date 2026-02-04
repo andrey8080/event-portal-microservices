@@ -1,0 +1,63 @@
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-sm-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h4 class="mb-0">Вход в систему</h4>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Alert for Error -->
+                    <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+                        {{ errorMessage }}
+                        <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+                    </div>
+
+                    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+                        <!-- Email field -->
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                <input type="email" class="form-control" id="email" formControlName="email"
+                                    placeholder="example@email.com"
+                                    [ngClass]="{'is-invalid': loginForm.get('email')?.invalid && loginForm.get('email')?.touched}">
+                            </div>
+                            <div *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+                                class="invalid-feedback">
+                                <div *ngIf="loginForm.get('email')?.errors?.['required']">Email обязателен</div>
+                                <div *ngIf="loginForm.get('email')?.errors?.['email']">Введите корректный email</div>
+                            </div>
+                        </div>
+
+                        <!-- Password field -->
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Пароль</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                <input type="password" class="form-control" id="password" formControlName="password"
+                                    placeholder="Введите пароль"
+                                    [ngClass]="{'is-invalid': loginForm.get('password')?.invalid && loginForm.get('password')?.touched}">
+                            </div>
+                            <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+                                class="invalid-feedback">
+                                <div *ngIf="loginForm.get('password')?.errors?.['required']">Пароль обязателен</div>
+                            </div>
+                        </div>
+
+                        <!-- Submit button -->
+                        <button type="submit" class="btn btn-primary w-100 py-2 mt-3"
+                            [disabled]="loginForm.invalid || isSubmitting">
+                            <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status"
+                                aria-hidden="true"></span>
+                            Войти
+                        </button>
+                    </form>
+                </div>
+                <div class="card-footer text-center py-3">
+                    <p class="mb-0">Нет аккаунта? <a routerLink="/register"
+                            class="text-primary fw-bold">Зарегистрироваться</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

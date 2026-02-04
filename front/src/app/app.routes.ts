@@ -1,0 +1,32 @@
+import { Routes } from '@angular/router';
+import { HomeComponent } from './components/home/home.component';
+import { LoginComponent } from './components/auth/login/login.component';
+import { RegisterComponent } from './components/auth/register/register.component';
+import { EventListComponent } from './components/events/event-list/event-list.component';
+import { EventDetailComponent } from './components/events/event-detail/event-detail.component';
+import { EventCreateComponent } from './components/events/event-create/event-create.component';
+import { EventEditComponent } from './components/events/event-edit/event-edit.component';
+import { UserProfileComponent } from './components/user/user-profile/user-profile.component';
+import { UserEventsComponent } from './components/user/user-events/user-events.component';
+import { QuizCreateComponent } from './components/quiz/quiz-create/quiz-create.component';
+import { QuizPlayComponent } from './components/quiz/quiz-play/quiz-play.component';
+import { AdminDashboardComponent } from './components/admin/admin-dashboard/admin-dashboard.component';
+import { OrganizerDashboardComponent } from './components/organizer/organizer-dashboard/organizer-dashboard.component';
+import { NotFoundComponent } from './components/layout/not-found/not-found.component';
+
+export const routes: Routes = [
+    { path: '', component: HomeComponent },
+    { path: 'login', component: LoginComponent },
+    { path: 'register', component: RegisterComponent },
+    { path: 'events', component: EventListComponent },
+    { path: 'events/create', component: EventCreateComponent },
+    { path: 'events/:id', component: EventDetailComponent },
+    { path: 'events/event-edit/:id', component: EventEditComponent }, 
+    { path: 'profile', component: UserProfileComponent },
+    { path: 'my-events', component: UserEventsComponent },
+    { path: 'quiz/create', component: QuizCreateComponent },
+    { path: 'quiz/:id/play', component: QuizPlayComponent },
+    { path: 'admin', component: AdminDashboardComponent },
+    { path: 'organizer', component: OrganizerDashboardComponent },
+    { path: '**', component: NotFoundComponent }
+];

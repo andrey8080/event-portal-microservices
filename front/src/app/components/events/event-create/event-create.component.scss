@@ -1,0 +1,50 @@
+// Event creation styles
+.card {
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+// Image preview styles
+.img-thumbnail {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    margin-bottom: 10px;
+}
+
+// Map container styles
+#map-preview {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    margin-top: 10px;
+}
+
+// Form field styles
+.form-control.is-invalid {
+    background-image: none;
+}
+
+// Form section headers
+h4 {
+    margin-top: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+// Form helper text
+.form-text {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+// Switch custom styling
+.form-check-input:checked {
+    background-color: #198754;
+    border-color: #198754;
+}
+
+// Button loading state
+.btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}

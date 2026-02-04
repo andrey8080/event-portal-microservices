@@ -1,0 +1,236 @@
+<div class="container mt-4">
+    <!-- Page title -->
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Профиль пользователя</h2>
+            <p class="text-muted">Управление информацией профиля и настройками аккаунта</p>
+        </div>
+    </div>
+
+    <!-- Loading spinner -->
+    <div *ngIf="isLoading" class="d-flex justify-content-center my-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Загрузка...</span>
+        </div>
+    </div>
+
+    <!-- Error message -->
+    <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ errorMessage }}
+        <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+    </div>
+
+    <!-- Success message -->
+    <!-- <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>{{ successMessage }}
+        <button type="button" class="btn-close" (click)="successMessage = ''"></button>
+    </div> -->
+
+    <!-- Profile content -->
+    <div *ngIf="!isLoading && user" class="row">
+        <!-- Left column: User info and settings -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">{{ user.name }}</h4>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-column align-items-center text-center">
+                        <p class="text-muted font-size-sm">{{ user.email }}</p>
+                        <p *ngIf="user.phoneNumber" class="text-muted font-size-sm">{{ user.phoneNumber }}</p>
+                        <p class="text-muted font-size-sm">{{ user.role }}</p>
+                    </div>
+                </div>
+                <div class="card-footer bg-white">
+                    <button *ngIf="role !== 'organizer'" class="btn btn-danger w-100" (click)="becomeOrganizer()">
+                        <i class="bi bi-person-plus me-2"></i>Стать организатором
+                    </button>
+                    <button class="btn btn-danger w-100" (click)="confirmDeleteAccount()">
+                        <i class="bi bi-trash me-2"></i>Удалить аккаунт
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right column: Edit profile form and tabs -->
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <ul class="nav nav-tabs card-header-tabs">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="profile-tab" data-bs-toggle="tab" href="#profile">
+                                <i class="bi bi-person me-2"></i>Личные данные
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="password-tab" data-bs-toggle="tab" href="#password">
+                                <i class="bi bi-lock me-2"></i>Сменить пароль
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="tickets-tab" data-bs-toggle="tab" href="#tickets" (click)="getUserTickets()">
+                                Мои билеты
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="card-body">
+                    <div class="tab-content">
+                        <!-- Profile tab -->
+                        <div class="tab-pane fade show active" id="profile">
+                            <form [formGroup]="profileForm" (ngSubmit)="updateProfile()">
+                                <!-- Name -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="name" class="form-label">Имя</label>
+                                        <input value="{{user.name}}" type="text" class="form-control" id="name"
+                                            formControlName="name"
+                                            [ngClass]="{'is-invalid': profileForm.get('name')?.invalid && profileForm.get('name')?.touched}">
+                                        <div *ngIf="profileForm.get('name')?.invalid && profileForm.get('name')?.touched"
+                                            class="invalid-feedback">
+                                            Имя обязательно
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="email" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="email" formControlName="email"
+                                            [ngClass]="{'is-invalid': profileForm.get('email')?.invalid && profileForm.get('email')?.touched}">
+                                        <div *ngIf="profileForm.get('email')?.invalid && profileForm.get('email')?.touched"
+                                            class="invalid-feedback">
+                                            <div *ngIf="profileForm.get('email')?.errors?.['required']">Email обязателен
+                                            </div>
+                                            <div *ngIf="profileForm.get('email')?.errors?.['email']">Введите корректный
+                                                email</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Phone -->
+                                <div class="mb-3">
+                                    <label for="phoneNumber" class="form-label">Телефон</label>
+                                    <input type="tel" class="form-control" id="phoneNumber"
+                                        formControlName="phoneNumber">
+                                </div>
+
+                                <!-- Submit button -->
+                                <button type="submit" class="btn btn-primary mt-3"
+                                    [disabled]="profileForm.invalid || isUpdating || !profileForm.dirty">
+                                    <span *ngIf="isUpdating" class="spinner-border spinner-border-sm me-2"
+                                        role="status"></span>
+                                    <i *ngIf="!isUpdating" class="bi bi-check-circle me-2"></i>
+                                    Сохранить изменения
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Password tab -->
+                        <div class="tab-pane fade" id="password">
+                            <form [formGroup]="passwordForm" (ngSubmit)="updatePassword()">
+                                <!-- Current password -->
+                                <div class="mb-3">
+                                    <label for="currentPassword" class="form-label">Текущий пароль</label>
+                                    <input type="password" class="form-control" id="currentPassword"
+                                        formControlName="currentPassword"
+                                        [ngClass]="{'is-invalid': passwordForm.get('currentPassword')?.invalid && passwordForm.get('currentPassword')?.touched}">
+                                    <div *ngIf="passwordForm.get('currentPassword')?.invalid && passwordForm.get('currentPassword')?.touched"
+                                        class="invalid-feedback">
+                                        Текущий пароль обязателен
+                                    </div>
+                                </div>
+
+                                <!-- New password -->
+                                <div class="mb-3"></div>
+                                <label for="newPassword" class="form-label">Новый пароль</label>
+                                <input type="password" class="form-control" id="newPassword"
+                                    formControlName="newPassword"
+                                    [ngClass]="{'is-invalid': passwordForm.get('newPassword')?.invalid && passwordForm.get('newPassword')?.touched}">
+                                <div *ngIf="passwordForm.get('newPassword')?.invalid && passwordForm.get('newPassword')?.touched"
+                                    class="invalid-feedback">
+                                    <div *ngIf="passwordForm.get('newPassword')?.errors?.['required']">Новый пароль
+                                        обязателен</div>
+                                    <div *ngIf="passwordForm.get('newPassword')?.errors?.['minlength']">
+                                        Пароль должен содержать не менее 6 символов
+                                    </div>
+                                </div>
+
+                                <!-- Confirm new password -->
+                                <div class="mb-3"></div>
+                                <label for="confirmPassword" class="form-label">Подтверждение нового пароля</label>
+                                <input type="password" class="form-control" id="confirmPassword"
+                                    formControlName="confirmPassword"
+                                    [ngClass]="{'is-invalid': passwordsNotMatch() && passwordForm.get('confirmPassword')?.touched}">
+                                <div *ngIf="passwordsNotMatch() && passwordForm.get('confirmPassword')?.touched"
+                                    class="invalid-feedback">
+                                    Пароли не совпадают
+                                </div>
+
+                                <!-- Submit button -->
+                                <button type="submit" class="btn btn-primary mt-3"
+                                    [disabled]="passwordForm.invalid || isUpdatingPassword || passwordsNotMatch()">
+                                    <span *ngIf="isUpdatingPassword" class="spinner-border spinner-border-sm me-2"
+                                        role="status"></span>
+                                    <i *ngIf="!isUpdatingPassword" class="bi bi-check-circle me-2"></i>
+                                    Изменить пароль
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Tickets tab -->
+                        <div class="tab-pane fade" id="tickets">
+                            <div class="card shadow-sm mt-4">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Мои события</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div *ngIf="userEvents.length === 0" class="text-center py-3">
+                                        <p class="text-muted mb-0">Вы пока не зарегистрированы ни на одно событие</p>
+                                        <a routerLink="/events" class="btn btn-outline-primary mt-2">Найти события</a>
+                                    </div>
+
+                                    <div *ngFor="let event of userEvents" class="mb-3 border-bottom pb-3">
+                                        <div class="d-flex align-items-center">
+                                            <div>
+                                                <h6 class="mb-1">{{ event.title }}</h6>
+                                                <p class="text-muted mb-1">
+                                                <i class="bi bi-calendar-event me-1"></i>
+                                                {{ event.startDate | date:'dd.MM.yyyy, HH:mm' }}
+                                                </p>
+                                                <a [routerLink]="['/events', event.id]" class="btn btn-sm btn-outline-primary">Подробнее</a>
+                                                <!-- Новая кнопка для QR-кода -->
+                                                <button
+                                                class="btn btn-sm btn-outline-secondary ms-2"
+                                                data-bs-toggle="modal" data-bs-target="#qrCodeModal"
+                                                (click)="updateQrCodeUrl(event.id, user.email)"
+                                                >
+                                                Получить QR-код
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                      
+                                      <!-- Модальное окно с QR-кодом -->
+                                    <div class="modal fade" id="qrCodeModal" tabindex="-1" aria-labelledby="qrCodeModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="qrCodeModalLabel">Ваш QR-код</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                                            </div>
+                                            <div class="modal-body text-center">
+                                                <img *ngIf="qrCodeUrl" [src]="qrCodeUrl" alt="QR Code" />
+                                            </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

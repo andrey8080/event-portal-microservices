@@ -1,0 +1,141 @@
+<div class="container mt-4">
+    <div class="mb-4">
+        <a [routerLink]="['/events', eventId]" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Вернуться к событию
+        </a>
+    </div>
+
+    <!-- Loading spinner -->
+    <div *ngIf="isLoading" class="text-center p-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Загрузка...</span>
+        </div>
+        <p class="mt-2">Загрузка квиза...</p>
+    </div>
+
+    <!-- Error message -->
+    <div *ngIf="errorMessage" class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ errorMessage }}
+    </div>
+
+    <div *ngIf="!isLoading && quiz">
+        <!-- Quiz intro screen -->
+        <div *ngIf="!isLoading && !isStarted && !isFinished" class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h2 class="mb-0">{{ quiz?.description }}</h2>
+            </div>
+            <div class="card-body p-4">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h4 class="mb-4">Информация о квизе</h4>
+                        <p><strong>Количество вопросов:</strong> {{ totalQuestions }}</p>
+                        <p><strong>Время на прохождение:</strong> {{ Math.floor(quiz?.timeToPass / 60) || 0 }} минут {{
+                            quiz?.timeToPass % 60 }} секунд</p>
+                        <p>Прочитайте внимательно вопросы и выберите правильные ответы. После завершения вы сможете
+                            увидеть свой результат.</p>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <img src="assets/quiz-icon.png" alt="Quiz" class="img-fluid mb-3" style="max-height: 150px;"
+                            onerror="this.src='https://placehold.co/150x150?text=Quiz'">
+                        <button class="btn btn-primary btn-lg w-100" (click)="startQuiz()">
+                            <i class="bi bi-play-fill me-2"></i> Начать квиз
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quiz question screen -->
+        <div *ngIf="isStarted && !isFinished && !quizCompleted" class="card shadow">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">Вопрос {{ currentQuestionIndex + 1 }} из {{ totalQuestions }}</h3>
+                <div class="timer badge bg-warning text-dark fs-5">
+                    <i class="bi bi-clock me-1"></i> {{ getFormattedTime() }}
+                </div>
+            </div>
+            <div class="card-body p-4">
+                <ng-container *ngIf="getCurrentQuestion() as question">
+                    <h4 class="mb-4">{{ question.text }}</h4>
+
+                    <!-- Input for answer -->
+                    <div class="mb-3">
+                        <label for="answer" class="form-label">Ваш ответ:</label>
+                        <textarea class="form-control" id="answer" rows="3" [(ngModel)]="selectedAnswer"
+                            (change)="selectAnswer(selectedAnswer || '')"
+                            placeholder="Введите ваш ответ здесь..."></textarea>
+                    </div>
+                </ng-container>
+
+                <!-- Progress bar -->
+                <div class="progress mb-4">
+                    <div class="progress-bar" role="progressbar"
+                        [style.width]="((currentQuestionIndex + 1) / totalQuestions * 100) + '%'"
+                        [attr.aria-valuenow]="currentQuestionIndex + 1" aria-valuemin="0"
+                        [attr.aria-valuemax]="totalQuestions">
+                        {{ Math.round((currentQuestionIndex + 1) / totalQuestions * 100) }}%
+                    </div>
+                </div>
+
+                <!-- Navigation buttons -->
+                <div class="d-flex justify-content-between">
+                    <button class="btn btn-secondary" (click)="previousQuestion()"
+                        [disabled]="currentQuestionIndex === 0">
+                        <i class="bi bi-arrow-left me-2"></i> Назад
+                    </button>
+                    <button *ngIf="currentQuestionIndex < totalQuestions - 1" class="btn btn-primary"
+                        (click)="nextQuestion()">
+                        Далее <i class="bi bi-arrow-right ms-2"></i>
+                    </button>
+                    <button *ngIf="currentQuestionIndex === totalQuestions - 1" class="btn btn-success"
+                        (click)="finishQuiz()">
+                        <i class="bi bi-check-circle me-2"></i> Завершить
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quiz completion confirmation -->
+        <div *ngIf="quizCompleted && !isFinished" class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Проверка ответов</h3>
+            </div>
+            <div class="card-body p-4 text-center">
+                <div class="mb-4">
+                    <i class="bi bi-question-circle display-1 text-primary"></i>
+                </div>
+                <h4 class="mb-3">Вы ответили на все вопросы</h4>
+                <p class="mb-4">Готовы отправить ответы и узнать свой результат?</p>
+
+                <div class="d-flex justify-content-center gap-3 mt-3">
+                    <button class="btn btn-secondary" (click)="previousQuestion()">
+                        <i class="bi bi-arrow-left me-2"></i> Вернуться к вопросам
+                    </button>
+                    <button class="btn btn-primary" (click)="finishQuiz()" [disabled]="isSubmitting">
+                        <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        <i *ngIf="!isSubmitting" class="bi bi-send me-2"></i> Отправить ответы
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results screen -->
+        <div *ngIf="isFinished" class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h3 class="mb-0">Результаты квиза</h3>
+            </div>
+            <div class="card-body p-4 text-center">
+                <div class="mb-4">
+                    <i class="bi bi-trophy display-1 text-warning"></i>
+                </div>
+                <h4 class="mb-3">Поздравляем с завершением квиза!</h4>
+                <div class="result-score p-3 bg-light rounded-3 mb-4">
+                    <h3>Ваш результат: <span class="text-primary">{{ score }}</span></h3>
+                </div>
+
+                <button class="btn btn-primary btn-lg" (click)="returnToEvent()">
+                    <i class="bi bi-arrow-left me-2"></i> Вернуться к событию
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
