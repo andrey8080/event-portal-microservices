@@ -1,0 +1,9 @@
+spring.application.name=geo-service
+server.port=8085
+
+# CORS (browser clients)
+app.cors.allowed-origins=${APP_CORS_ALLOWED_ORIGINS:http://localhost:4200}
+
+# Yandex (optional)
+yandex.maps.api.key=${YANDEX_MAPS_API_KEY:}
+yandex.maps.search.api.key=${YANDEX_MAPS_SEARCH_API_KEY:${YANDEX_MAPS_API_KEY:}}

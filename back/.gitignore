@@ -1,0 +1,72 @@
+##############################
+# Gradle / Java (multi-module)
+##############################
+/.gradle/
+**/.gradle/
+
+/build/
+**/build/
+
+/bin/
+**/bin/
+
+*.class
+*.log
+
+##############################
+# IntelliJ IDEA
+##############################
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+##############################
+# Eclipse / STS
+##############################
+.project
+.classpath
+.settings/
+
+##############################
+# VS Code
+##############################
+.vscode/
+
+##############################
+# OS
+##############################
+.DS_Store
+Thumbs.db
+
+##############################
+# Env / secrets (local only)
+##############################
+.env
+.env.*
+!.env.example
+
+##############################
+# Spring Boot config (local)
+##############################
+**/src/main/resources/application.properties
+**/src/main/resources/application-*.properties
+**/src/main/resources/application.yml
+**/src/main/resources/application-*.yml
+**/src/main/resources/application.yaml
+**/src/main/resources/application-*.yaml
+!**/src/main/resources/application.properties.example
+!**/src/main/resources/application-*.properties.example
+!**/src/main/resources/application.yml.example
+!**/src/main/resources/application-*.yml.example
+!**/src/main/resources/application.yaml.example
+!**/src/main/resources/application-*.yaml.example
+
+##############################
+# Local runtime artifacts
+##############################
+hs_err_pid*
+replay_pid*
+
+k8s/

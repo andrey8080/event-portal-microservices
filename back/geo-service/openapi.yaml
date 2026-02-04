@@ -1,0 +1,223 @@
+openapi: 3.0.3
+info:
+  title: Geo Service API
+  version: 1.0.0
+  description: |
+    Прокси к Яндекс Картам: геокодинг и поиск мест.
+
+    Ingress (единый URL): http://api.eventportal.local
+    Direct (локально): http://localhost:8085
+servers:
+  - url: http://localhost:8085
+    description: Direct
+  - url: http://api.eventportal.local
+    description: Ingress
+
+tags:
+  - name: Geo
+    description: Геокодинг и поиск
+
+paths:
+  /api/geo/geocode:
+    get:
+      tags: [Geo]
+      summary: Геокодирование адреса
+      parameters:
+        - in: query
+          name: address
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: apikey
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeoSearchResponse'
+        '400':
+          description: Ошибка
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeoErrorResponse'
+
+  /api/geo/search:
+    get:
+      tags: [Geo]
+      summary: Универсальный поиск мест
+      parameters:
+        - in: query
+          name: query
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: apikey
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeoSearchResponse'
+        '400':
+          description: Ошибка
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeoErrorResponse'
+
+  /api/geo/search/biz:
+    get:
+      tags: [Geo]
+      summary: Поиск организаций (business search)
+      parameters:
+        - in: query
+          name: query
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: apikey
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: bbox
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: results
+          required: false
+          schema:
+            type: integer
+            default: 5
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeoSearchResponse'
+        '400':
+          description: Ошибка
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeoErrorResponse'
+
+  /geo/geocode:
+    get:
+      tags: [Geo]
+      summary: Alias на /api/geo/geocode
+      parameters:
+        - in: query
+          name: address
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: apikey
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeoSearchResponse'
+
+  /geo/search:
+    get:
+      tags: [Geo]
+      summary: Alias на /api/geo/search
+      parameters:
+        - in: query
+          name: query
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: apikey
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeoSearchResponse'
+
+  /geo/search/biz:
+    get:
+      tags: [Geo]
+      summary: Alias на /api/geo/search/biz
+      parameters:
+        - in: query
+          name: query
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: apikey
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: bbox
+          required: false
+          schema:
+            type: string
+        - in: query
+          name: results
+          required: false
+          schema:
+            type: integer
+            default: 5
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeoSearchResponse'
+
+components:
+  schemas:
+    GeoSearchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeoPlace'
+      required: [results]
+    GeoPlace:
+      type: object
+      properties:
+        name: { type: string }
+        address: { type: string }
+        type: { type: string }
+        precision: { type: string }
+        lat: { type: number }
+        lng: { type: number }
+    GeoErrorResponse:
+      type: object
+      properties:
+        error: { type: string }
+        message: { type: string }
+      required: [error]

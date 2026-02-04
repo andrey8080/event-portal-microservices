@@ -1,0 +1,14 @@
+spring.application.name=user-service
+server.port=8082
+
+# JWT
+jwt.secret=${JWT_SECRET:change-me}
+jwt.expiration=${JWT_EXPIRATION:86400000}
+
+# Database
+spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/eventportal}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME:postgres}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:postgres}
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+spring.jpa.hibernate.ddl-auto=none

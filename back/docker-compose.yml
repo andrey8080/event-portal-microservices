@@ -1,0 +1,124 @@
+services:
+  gateway-service:
+    build:
+      context: .
+      dockerfile: gateway-service/Dockerfile
+    environment:
+      SPRING_APPLICATION_NAME: gateway-service
+      SERVER_PORT: 8080
+      SERVICES_AUTH_BASE_URL: http://auth-service:8081
+      SERVICES_USER_BASE_URL: http://user-service:8082
+      SERVICES_EVENT_BASE_URL: http://event-service:8083
+      SERVICES_QUIZ_BASE_URL: http://quiz-service:8084
+      SERVICES_GEO_BASE_URL: http://geo-service:8085
+      APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost:4200}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - auth-service
+      - user-service
+      - event-service
+      - quiz-service
+      - geo-service
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-eventportal}
+      POSTGRES_USER: ${DB_USER:-andrey}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  user-service:
+    build:
+      context: .
+      dockerfile: user-service/Dockerfile
+    environment:
+      SPRING_APPLICATION_NAME: user-service
+      SERVER_PORT: 8082
+      JWT_SECRET: ${JWT_SECRET:-change-me}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-eventportal}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-andrey}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-postgres}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    ports:
+      - "8082:8082"
+    depends_on:
+      - postgres
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    environment:
+      SPRING_APPLICATION_NAME: auth-service
+      SERVER_PORT: 8081
+      JWT_SECRET: ${JWT_SECRET:-change-me}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      SERVICES_USER_BASE_URL: http://user-service:8082
+    ports:
+      - "8081:8081"
+    depends_on:
+      - user-service
+
+  event-service:
+    build:
+      context: .
+      dockerfile: event-service/Dockerfile
+    environment:
+      SPRING_APPLICATION_NAME: event-service
+      SERVER_PORT: 8083
+      JWT_SECRET: ${JWT_SECRET:-change-me}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-eventportal}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-andrey}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-postgres}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+      SPRING_MAIL_HOST: ${MAIL_HOST:-smtp.yandex.ru}
+      SPRING_MAIL_PORT: ${MAIL_PORT:-465}
+      SPRING_MAIL_USERNAME: ${MAIL_USER:-}
+      SPRING_MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "true"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_ENABLE: "true"
+    ports:
+      - "8083:8083"
+    depends_on:
+      - postgres
+
+  quiz-service:
+    build:
+      context: .
+      dockerfile: quiz-service/Dockerfile
+    environment:
+      SPRING_APPLICATION_NAME: quiz-service
+      SERVER_PORT: 8084
+      JWT_SECRET: ${JWT_SECRET:-change-me}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-eventportal}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-andrey}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-postgres}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+    ports:
+      - "8084:8084"
+    depends_on:
+      - postgres
+
+  geo-service:
+    build:
+      context: .
+      dockerfile: geo-service/Dockerfile
+    environment:
+      SPRING_APPLICATION_NAME: geo-service
+      SERVER_PORT: 8085
+      APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost:4200}
+      YANDEX_MAPS_API_KEY: ${YANDEX_MAPS_API_KEY:-}
+      YANDEX_MAPS_SEARCH_API_KEY: ${YANDEX_MAPS_SEARCH_API_KEY:-}
+    ports:
+      - "8085:8085"
+
+volumes:
+  postgres-data:

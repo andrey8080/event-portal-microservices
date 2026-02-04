@@ -1,0 +1,114 @@
+openapi: 3.0.3
+info:
+  title: EventPortal Microservices API (aggregated)
+  version: 2.0.0
+  description: |
+    Агрегированная OpenAPI для набора микросервисов в `back`.
+
+    Этот файл не дублирует контракты, а ссылается на per-service спецификации:
+    - auth-service/openapi.yaml
+    - user-service/openapi.yaml
+    - event-service/openapi.yaml
+    - quiz-service/openapi.yaml
+    - geo-service/openapi.yaml
+
+    Основной внешний URL (Kubernetes Ingress): http://api.eventportal.local
+servers:
+  - url: http://api.eventportal.local
+    description: Ingress
+  - url: http://localhost:8081
+    description: auth-service (direct)
+  - url: http://localhost:8082
+    description: user-service (direct)
+  - url: http://localhost:8083
+    description: event-service (direct)
+  - url: http://localhost:8084
+    description: quiz-service (direct)
+  - url: http://localhost:8085
+    description: geo-service (direct)
+
+tags:
+  - name: Auth
+  - name: Users
+  - name: Events
+  - name: Quizzes
+  - name: Geo
+
+paths:
+  /auth/signin:
+    $ref: './auth-service/openapi.yaml#/paths/~1auth~1signin'
+  /auth/signup:
+    $ref: './auth-service/openapi.yaml#/paths/~1auth~1signup'
+  /auth/verify-token:
+    $ref: './auth-service/openapi.yaml#/paths/~1auth~1verify-token'
+
+  /users/me:
+    $ref: './user-service/openapi.yaml#/paths/~1users~1me'
+  /users/me/role:
+    $ref: './user-service/openapi.yaml#/paths/~1users~1me~1role'
+  /users:
+    $ref: './user-service/openapi.yaml#/paths/~1users'
+  /users/{id}:
+    $ref: './user-service/openapi.yaml#/paths/~1users~1%7Bid%7D'
+  /internal/users/by-email:
+    $ref: './user-service/openapi.yaml#/paths/~1internal~1users~1by-email'
+  /internal/users:
+    $ref: './user-service/openapi.yaml#/paths/~1internal~1users'
+
+  /events:
+    $ref: './event-service/openapi.yaml#/paths/~1events'
+  /events/{id}:
+    $ref: './event-service/openapi.yaml#/paths/~1events~1%7Bid%7D'
+  /events/{id}/participants:
+    $ref: './event-service/openapi.yaml#/paths/~1events~1%7Bid%7D~1participants'
+  /events/{id}/registrations:
+    $ref: './event-service/openapi.yaml#/paths/~1events~1%7Bid%7D~1registrations'
+  /events/{id}/registrations/me:
+    $ref: './event-service/openapi.yaml#/paths/~1events~1%7Bid%7D~1registrations~1me'
+  /events/{id}/feedback:
+    $ref: './event-service/openapi.yaml#/paths/~1events~1%7Bid%7D~1feedback'
+  /events/{id}/feedback/{feedbackId}:
+    $ref: './event-service/openapi.yaml#/paths/~1events~1%7Bid%7D~1feedback~1%7BfeedbackId%7D'
+  /events/{id}/feedback/middle-score:
+    $ref: './event-service/openapi.yaml#/paths/~1events~1%7Bid%7D~1feedback~1middle-score'
+  /events/{id}/newsletter:
+    $ref: './event-service/openapi.yaml#/paths/~1events~1%7Bid%7D~1newsletter'
+  /events/users/{id}/participated:
+    $ref: './event-service/openapi.yaml#/paths/~1events~1users~1%7Bid%7D~1participated'
+  /events/me/created:
+    $ref: './event-service/openapi.yaml#/paths/~1events~1me~1created'
+  /events/me/participants/count:
+    $ref: './event-service/openapi.yaml#/paths/~1events~1me~1participants~1count'
+  /events/me/feedback/average-score:
+    $ref: './event-service/openapi.yaml#/paths/~1events~1me~1feedback~1average-score'
+
+  /quizzes:
+    $ref: './quiz-service/openapi.yaml#/paths/~1quizzes'
+  /quizzes/{quizId}/questions:
+    $ref: './quiz-service/openapi.yaml#/paths/~1quizzes~1%7BquizId%7D~1questions'
+  /quizzes/{quizId}/questions/{questionId}/answers:
+    $ref: './quiz-service/openapi.yaml#/paths/~1quizzes~1%7BquizId%7D~1questions~1%7BquestionId%7D~1answers'
+  /quizzes/{quizId}/results:
+    $ref: './quiz-service/openapi.yaml#/paths/~1quizzes~1%7BquizId%7D~1results'
+  /quizzes/{quizId}/results/me:
+    $ref: './quiz-service/openapi.yaml#/paths/~1quizzes~1%7BquizId%7D~1results~1me'
+
+  /api/geo/geocode:
+    $ref: './geo-service/openapi.yaml#/paths/~1api~1geo~1geocode'
+  /api/geo/search:
+    $ref: './geo-service/openapi.yaml#/paths/~1api~1geo~1search'
+  /api/geo/search/biz:
+    $ref: './geo-service/openapi.yaml#/paths/~1api~1geo~1search~1biz'
+  /geo/geocode:
+    $ref: './geo-service/openapi.yaml#/paths/~1geo~1geocode'
+  /geo/search:
+    $ref: './geo-service/openapi.yaml#/paths/~1geo~1search'
+  /geo/search/biz:
+    $ref: './geo-service/openapi.yaml#/paths/~1geo~1search~1biz'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

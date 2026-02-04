@@ -1,0 +1,549 @@
+openapi: 3.0.3
+info:
+  title: Event Service API
+  version: 2.0.0
+  description: |
+    REST API для событий, регистраций, отзывов и рассылок.
+
+    Ingress (единый URL): http://api.eventportal.local
+    Direct (локально): http://localhost:8083
+servers:
+  - url: http://localhost:8083
+    description: Direct
+  - url: http://api.eventportal.local
+    description: Ingress
+
+tags:
+  - name: Events
+    description: События и подресурсы
+  - name: Users
+    description: Срезы событий по пользователю (внутри /events)
+
+paths:
+  /events:
+    get:
+      tags: [Events]
+      summary: Список событий (опционально фильтр по категории)
+      parameters:
+        - in: query
+          name: category
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventDTO'
+    post:
+      tags: [Events]
+      summary: Создать событие
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventDTO'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /events/{id}:
+    get:
+      tags: [Events]
+      summary: Получить событие по ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventDTO'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [Events]
+      summary: Обновить событие
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventDTO'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Events]
+      summary: Удалить событие
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /events/{id}/participants:
+    get:
+      tags: [Events]
+      summary: Список участников события
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserDTO'
+
+  /events/{id}/registrations:
+    get:
+      tags: [Events]
+      summary: Зарегистрированные пользователи события
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserDTO'
+    post:
+      tags: [Events]
+      summary: Зарегистрироваться на событие
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /events/{id}/registrations/me:
+    get:
+      tags: [Events]
+      summary: Проверить регистрацию текущего пользователя
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisteredResponse'
+    delete:
+      tags: [Events]
+      summary: Отменить регистрацию текущего пользователя
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CanceledResponse'
+
+  /events/{id}/feedback:
+    get:
+      tags: [Events]
+      summary: Получить отзывы по событию
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+    post:
+      tags: [Events]
+      summary: Оставить отзыв по событию
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /events/{id}/feedback/{feedbackId}:
+    delete:
+      tags: [Events]
+      summary: Удалить отзыв
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: feedbackId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /events/{id}/feedback/middle-score:
+    get:
+      tags: [Events]
+      summary: Средняя оценка по событию
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScoreResponse'
+
+  /events/{id}/newsletter:
+    post:
+      tags: [Events]
+      summary: Разослать сообщение участникам события
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /events/users/{id}/participated:
+    get:
+      tags: [Users]
+      summary: События, в которых участвовал пользователь
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventDTO'
+
+  /events/me/created:
+    get:
+      tags: [Users]
+      summary: События, созданные текущим пользователем
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventDTO'
+
+  /events/me/participants/count:
+    get:
+      tags: [Users]
+      summary: Кол-во участников на моих событиях
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                required: [count]
+
+  /events/me/feedback/average-score:
+    get:
+      tags: [Users]
+      summary: Средняя оценка по всем моим событиям
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScoreResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    FeedbackRequest:
+      type: object
+      properties:
+        rating:
+          type: integer
+        comment:
+          type: string
+      required: [rating, comment]
+    RegisteredResponse:
+      type: object
+      properties:
+        registered:
+          type: boolean
+      required: [registered]
+    CanceledResponse:
+      type: object
+      properties:
+        canceled:
+          type: boolean
+      required: [canceled]
+    ScoreResponse:
+      type: object
+      properties:
+        score:
+          type: number
+      required: [score]
+    EventDTO:
+      type: object
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        description: { type: string }
+        startDate: { type: string }
+        endDate: { type: string }
+        address: { type: string }
+        latitude: { type: number }
+        longitude: { type: number }
+        organizerId: { type: integer }
+        organizerName: { type: string }
+        price: { type: number }
+        maxParticipants: { type: integer }
+        registeredParticipants: { type: integer }
+        hasQuiz: { type: boolean }
+        images:
+          type: array
+          items: { type: string }
+        eventCategory: { type: string }
+        status: { type: string }
+        tags:
+          type: array
+          items: { type: string }
+    UserDTO:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string, format: email }
+        phoneNumber: { type: string }
+      required: [id, name, email]
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required: [message]
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]

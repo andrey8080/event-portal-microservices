@@ -1,0 +1,296 @@
+openapi: 3.0.3
+info:
+  title: Quiz Service API
+  version: 2.0.0
+  description: |
+    Квизы/вопросы/ответы/результаты.
+
+    Ingress (единый URL): http://api.eventportal.local
+    Direct (локально): http://localhost:8084
+servers:
+  - url: http://localhost:8084
+    description: Direct
+  - url: http://api.eventportal.local
+    description: Ingress
+
+tags:
+  - name: Quizzes
+    description: Квизы и подресурсы
+
+
+paths:
+  /quizzes:
+    post:
+      tags: [Quizzes]
+      summary: Создать квиз
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuizDTO'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags: [Quizzes]
+      summary: Получить квизы события (по eventId)
+      parameters:
+        - in: query
+          name: eventId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QuizDTO'
+
+  /quizzes/{quizId}/questions:
+    post:
+      tags: [Quizzes]
+      summary: Добавить вопрос в квиз
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: quizId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuizQuestionDTO'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      tags: [Quizzes]
+      summary: Получить вопросы квиза
+      parameters:
+        - in: path
+          name: quizId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QuizQuestionDTO'
+
+  /quizzes/{quizId}/questions/{questionId}/answers:
+    post:
+      tags: [Quizzes]
+      summary: Добавить ответ к вопросу
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: quizId
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: questionId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuizAnswerDTO'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Недостаточно прав
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags: [Quizzes]
+      summary: Получить ответы вопроса
+      parameters:
+        - in: path
+          name: quizId
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: questionId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QuizAnswerDTO'
+
+  /quizzes/{quizId}/results:
+    get:
+      tags: [Quizzes]
+      summary: Получить результаты квиза
+      parameters:
+        - in: path
+          name: quizId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QuizResultDTO'
+
+  /quizzes/{quizId}/results/me:
+    put:
+      tags: [Quizzes]
+      summary: Сохранить/обновить результат текущего пользователя
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: quizId
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: result
+          required: true
+          schema:
+            type: number
+            format: float
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Ошибка
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    QuizDTO:
+      type: object
+      properties:
+        id: { type: integer }
+        eventId: { type: integer }
+        description: { type: string }
+        timeToPass: { type: integer }
+    QuizQuestionDTO:
+      type: object
+      properties:
+        id: { type: integer }
+        quizId: { type: integer }
+        text: { type: string }
+        type: { type: string }
+    QuizAnswerDTO:
+      type: object
+      properties:
+        id: { type: integer }
+        questionId: { type: integer }
+        text: { type: string }
+    QuizResultDTO:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string, format: email }
+        result: { type: number, format: float }
+    MessageResponse:
+      type: object
+      properties:
+        message: { type: string }
+      required: [message]
+    ErrorResponse:
+      type: object
+      properties:
+        error: { type: string }
+      required: [error]

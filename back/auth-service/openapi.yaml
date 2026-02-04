@@ -1,0 +1,142 @@
+openapi: 3.0.3
+info:
+  title: Auth Service API
+  version: 1.0.0
+  description: |
+    Аутентификация и выдача JWT.
+
+    Ingress (единый URL): http://api.eventportal.local
+    Direct (локально): http://localhost:8081
+servers:
+  - url: http://localhost:8081
+    description: Direct
+  - url: http://api.eventportal.local
+    description: Ingress
+
+tags:
+  - name: Auth
+    description: Вход/регистрация/проверка токена
+
+paths:
+  /auth/signin:
+    post:
+      tags: [Auth]
+      summary: Вход (получение JWT)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SigninRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/signup:
+    post:
+      tags: [Auth]
+      summary: Регистрация (создание пользователя + JWT)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserSignupRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Некорректные данные
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Email занят
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/verify-token:
+    post:
+      tags: [Auth]
+      summary: Проверка токена + получение роли
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleResponse'
+        '401':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    SigninRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required: [email, password]
+    TokenResponse:
+      type: object
+      properties:
+        token:
+          type: string
+      required: [token]
+    RoleResponse:
+      type: object
+      properties:
+        role:
+          type: string
+          description: organizer|participant|admin
+      required: [role]
+    UserSignupRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phoneNumber:
+          type: string
+        password:
+          type: string
+      required: [email, password]
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]

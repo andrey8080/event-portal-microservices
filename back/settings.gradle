@@ -1,0 +1,9 @@
+rootProject.name = 'event-platform'
+include(
+    'auth-service',
+    'user-service',
+    'event-service',
+    'quiz-service',
+    'geo-service',
+    'gateway-service'
+)
