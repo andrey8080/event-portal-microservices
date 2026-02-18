@@ -15,7 +15,6 @@ import { User } from '@app/models/user.model';
 export class HeaderComponent implements OnInit, OnDestroy {
     isAuthenticated = false;
     isOrganizer = false;
-    isAdmin = false;
     currentUser: User | null = null;
 
     private userSubscription: Subscription | null = null;
@@ -27,7 +26,6 @@ export class HeaderComponent implements OnInit, OnDestroy {
             this.currentUser = user;
             this.isAuthenticated = !!user;
             this.isOrganizer = this.authService.isOrganizer();
-            this.isAdmin = this.authService.isAdmin();
         });
     }
 

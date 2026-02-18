@@ -10,7 +10,6 @@ import { UserProfileComponent } from './components/user/user-profile/user-profil
 import { UserEventsComponent } from './components/user/user-events/user-events.component';
 import { QuizCreateComponent } from './components/quiz/quiz-create/quiz-create.component';
 import { QuizPlayComponent } from './components/quiz/quiz-play/quiz-play.component';
-import { AdminDashboardComponent } from './components/admin/admin-dashboard/admin-dashboard.component';
 import { OrganizerDashboardComponent } from './components/organizer/organizer-dashboard/organizer-dashboard.component';
 import { NotFoundComponent } from './components/layout/not-found/not-found.component';
 
@@ -21,12 +20,11 @@ export const routes: Routes = [
     { path: 'events', component: EventListComponent },
     { path: 'events/create', component: EventCreateComponent },
     { path: 'events/:id', component: EventDetailComponent },
-    { path: 'events/event-edit/:id', component: EventEditComponent }, 
+    { path: 'events/event-edit/:id', component: EventEditComponent },
     { path: 'profile', component: UserProfileComponent },
     { path: 'my-events', component: UserEventsComponent },
     { path: 'quiz/create', component: QuizCreateComponent },
     { path: 'quiz/:id/play', component: QuizPlayComponent },
-    { path: 'admin', component: AdminDashboardComponent },
     { path: 'organizer', component: OrganizerDashboardComponent },
     { path: '**', component: NotFoundComponent }
 ];

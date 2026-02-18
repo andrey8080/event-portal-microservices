@@ -1,0 +1,72 @@
+.address-input {
+    .address-suggestions {
+        position: absolute;
+        z-index: 1050;
+        width: 100%;
+        max-height: 260px;
+        overflow: auto;
+        border: 1px solid rgba(148, 163, 184, 0.24);
+        border-top: 0;
+        border-radius: 0 0 0.375rem 0.375rem;
+        background: rgba(15, 23, 42, 0.92);
+    }
+
+    .map-container {
+        position: relative;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        border-radius: 0.375rem;
+        overflow: hidden;
+    }
+
+    .map-loading {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(15, 23, 42, 0.72);
+        backdrop-filter: blur(2px);
+        z-index: 2;
+        font-size: 14px;
+        color: #e2e8f0;
+    }
+}
+
+.address-suggestions {
+    .list-group-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        user-select: none;
+        background: transparent;
+        color: #e2e8f0;
+        border-color: rgba(148, 163, 184, 0.16);
+    }
+
+    .suggestion-kind {
+        font-size: 12px;
+        opacity: 0.7;
+        margin-left: 12px;
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 768px) {
+    .address-input {
+        .address-suggestions {
+            max-height: 220px;
+        }
+
+        .map-container {
+            border-radius: 0.5rem;
+        }
+    }
+
+    .address-suggestions .list-group-item {
+        min-height: 42px;
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+        font-size: 0.92rem;
+    }
+}

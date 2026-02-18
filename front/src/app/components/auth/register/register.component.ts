@@ -65,7 +65,7 @@ export class RegisterComponent implements OnInit {
                 this.router.navigate(['/login']);
             },
             error: (error) => {
-                this.notificationService.error('Ошибка при регистрации: ' + error.message);
+                this.notificationService.errorFromHttp(error, 'Не удалось завершить регистрацию');
             }
         });
     }

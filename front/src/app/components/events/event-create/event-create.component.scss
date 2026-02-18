@@ -48,3 +48,24 @@ h4 {
     opacity: 0.65;
     cursor: not-allowed;
 }
+
+@media (max-width: 992px) {
+    h4 {
+        margin-top: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .img-thumbnail {
+        width: 84px;
+        height: 84px;
+    }
+
+    #map-preview {
+        margin-top: 0.5rem;
+    }
+
+    .form-text {
+        font-size: 0.75rem;
+    }
+}

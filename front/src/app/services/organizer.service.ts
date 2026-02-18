@@ -57,11 +57,6 @@ export class OrganizerService {
             );
     }
 
-    // Remove participant from an event
-    removeParticipantFromEvent(eventId: number, userId: number): Observable<any> {
-        return throwError(() => new Error('remove-participant endpoint is not available in event-service API'));
-    }
-
     // Send email to event participants
     sendEmailToParticipants(emailData: any, id: number): Observable<any> {
         const message = [emailData?.subject, emailData?.message].filter(Boolean).join('\n\n');
@@ -72,17 +67,6 @@ export class OrganizerService {
                 catchError(error => throwError(() => error))
             );
     }
-
-    // Export participants list for an event
-    exportParticipantsList(eventId: number): Observable<any> {
-        return throwError(() => new Error('export-participants endpoint is not available in event-service API'));
-    }
-
-    // Download organizer report
-    downloadReport(): Observable<any> {
-        return throwError(() => new Error('report endpoint is not available in event-service API'));
-    }
-
 
     getCountRegisteredUsers(): Observable<{ count: number }> {
         return this.http.get<{ count: number }>(`${this.eventsUrl}/me/participants/count`)

@@ -1,0 +1,53 @@
+<div [formGroup]="form" class="address-input">
+    <label class="form-label">{{ label }}*</label>
+
+    <div class="position-relative">
+        <div class="input-group">
+            <input type="text" class="form-control" [formControlName]="addressControlName" [placeholder]="placeholder"
+                autocomplete="off" (input)="onUserInput()" (focus)="showDropdown = true" (blur)="onBlur()"
+                (keydown.enter)="onEnter($event)" [ngClass]="{
+          'is-invalid':
+            form.get(addressControlName)?.invalid &&
+            (form.get(addressControlName)?.touched || form.get(addressControlName)?.dirty)
+        }" />
+            <span class="input-group-text" *ngIf="isLoading">Поиск…</span>
+        </div>
+
+        <div class="list-group address-suggestions" *ngIf="showDropdown && suggestions.length > 0">
+            <ul class="list-group">
+                <li class="list-group-item" *ngFor="let s of suggestions"
+                    (mousedown)="$event.preventDefault(); select(s)">
+                    <span class="suggestion-label">{{ s.label }}</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="invalid-feedback d-block" *ngIf="
+        form.get(addressControlName)?.hasError('required') &&
+        (form.get(addressControlName)?.touched || form.get(addressControlName)?.dirty)
+      ">
+            Адрес обязателен
+        </div>
+
+        <div class="invalid-feedback d-block" *ngIf="
+        form.get(addressControlName)?.hasError('addressNotResolved') &&
+        (form.get(addressControlName)?.touched || form.get(addressControlName)?.dirty)
+      ">
+            Уточните адрес и выберите вариант из списка
+        </div>
+
+        <div class="form-text">
+            Начните вводить адрес и выберите подсказку. Для точности лучше указывать дом.
+        </div>
+    </div>
+
+    <input type="hidden" [formControlName]="latitudeControlName" />
+    <input type="hidden" [formControlName]="longitudeControlName" />
+
+    <div class="mt-3" *ngIf="enableMapPreview">
+        <div class="map-container">
+            <div class="map-loading" *ngIf="!mapInitialized">Загрузка карты…</div>
+            <div [id]="getMapElementId()" [style.height.px]="mapHeight" style="width: 100%;"></div>
+        </div>
+    </div>
+</div>

@@ -184,7 +184,7 @@ export class EventDetailComponent implements OnInit {
             },
             error: (err) => {
                 console.error('Error loading feedbacks:', err);
-                this.notificationService.error('Ошибка при загрузке отзывов');
+                this.notificationService.errorFromHttp(err, 'Не удалось загрузить отзывы');
             }
         });
     }
@@ -238,7 +238,7 @@ export class EventDetailComponent implements OnInit {
             },
             error: (error) => {
                 console.error(`Error registering for event ${this.event?.id}:`, error);
-                this.notificationService.error(error.error?.message || 'Ошибка при регистрации на событие');
+                this.notificationService.errorFromHttp(error, 'Не удалось зарегистрироваться на событие');
                 this.isRegistering = false;
             }
         });
@@ -332,7 +332,7 @@ export class EventDetailComponent implements OnInit {
             error: (err) => {
                 console.error('Error submitting feedback:', err);
                 this.isSubmittingFeedback = false;
-                this.notificationService.error('Произошла ошибка при отправке отзыва');
+                this.notificationService.errorFromHttp(err, 'Не удалось отправить отзыв');
             }
         });
     }
@@ -350,7 +350,7 @@ export class EventDetailComponent implements OnInit {
                 },
                 error: (err) => {
                     console.error('Error deleting feedback:', err);
-                    alert('Произошла ошибка при удалении отзыва');
+                    this.notificationService.errorFromHttp(err, 'Не удалось удалить отзыв');
                 }
             });
         }
@@ -367,7 +367,7 @@ export class EventDetailComponent implements OnInit {
                 },
                 error: (err) => {
                     console.error('Error deleting event:', err);
-                    alert('Произошла ошибка при удалении события');
+                    this.notificationService.errorFromHttp(err, 'Не удалось удалить событие');
                 }
             });
         }

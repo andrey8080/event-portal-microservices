@@ -123,26 +123,9 @@
                     <!-- Правая колонка с картой и загрузкой изображений -->
                     <div class="col-md-6">
                         <div class="mb-3">
-                            <label for="address-input" class="form-label">Адрес проведения*</label>
-                            <div class="input-group">
-                                <input type="text" id="address-input" formControlName="address" class="form-control"
-                                    [ngClass]="{'is-invalid': eventForm.get('address')?.invalid && eventForm.get('address')?.touched}">
-                                <button type="button" class="btn btn-outline-secondary" (click)="findCoordinates()">
-                                    <i class="bi bi-search"></i> Найти
-                                </button>
-                            </div>
-                            <div class="invalid-feedback"
-                                *ngIf="eventForm.get('address')?.invalid && eventForm.get('address')?.touched">
-                                Адрес обязателен
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <div class="map-container">
-                                <div id="map-preview" style="width: 100%; height: 250px;"></div>
-                            </div>
-                            <input type="hidden" formControlName="latitude">
-                            <input type="hidden" formControlName="longitude">
+                            <app-address-input [form]="eventForm" label="Адрес проведения" addressControlName="address"
+                                latitudeControlName="latitude" longitudeControlName="longitude"
+                                [enableMapPreview]="true" [mapHeight]="250" />
                         </div>
 
                         <!-- <div class="mb-4">

@@ -15,13 +15,13 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Контроллер для проксирования запросов к геокодеру Яндекс Карт
@@ -29,9 +29,29 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/geo")
 @CrossOrigin(origins = "${app.cors.allowed-origins}", allowCredentials = "true")
+@SuppressWarnings({ "rawtypes", "unchecked", "null" })
 public class GeocodingController {
     private static final Logger logger = LoggerFactory.getLogger(GeocodingController.class);
     private final RestTemplate restTemplate;
+
+    // Простой in-memory кэш с TTL (>= 1h) для ускорения ответов.
+    // Для продакшена можно заменить на Redis, но для локального запуска этого
+    // достаточно.
+    private static final int CACHE_MAX_ENTRIES = 2000;
+    private static final long CACHE_TTL_SEARCH_MS = 60L * 60L * 1000L;
+    private static final long CACHE_TTL_GEOCODE_MS = 60L * 60L * 1000L;
+
+    private static final class CacheEntry {
+        final long expiresAt;
+        final Map<String, Object> payload;
+
+        CacheEntry(long expiresAt, Map<String, Object> payload) {
+            this.expiresAt = expiresAt;
+            this.payload = payload;
+        }
+    }
+
+    private final ConcurrentHashMap<String, CacheEntry> cache = new ConcurrentHashMap<>();
 
     @Value("${yandex.maps.api.key:}")
     private String defaultApiKey;
@@ -39,8 +59,37 @@ public class GeocodingController {
     @Value("${yandex.maps.search.api.key:${yandex.maps.api.key:}}")
     private String searchApiKey;
 
-    public GeocodingController() {
-        this.restTemplate = new RestTemplate();
+    public GeocodingController(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
+
+    /**
+     * Используется другими контроллерами (например /api/address/geocode) для
+     * приведения
+     * ответа Яндекс Геокодера к нашему формату.
+     */
+    public Map<String, Object> mapGeocoderResponse(Map<String, Object> yandexResponse, String defaultName) {
+        return processYandexGeocoderResponse(yandexResponse, defaultName);
+    }
+
+    private Map<String, Object> cacheGet(String key) {
+        CacheEntry entry = cache.get(key);
+        if (entry == null)
+            return null;
+        if (System.currentTimeMillis() > entry.expiresAt) {
+            cache.remove(key);
+            return null;
+        }
+        return entry.payload;
+    }
+
+    private void cachePut(String key, Map<String, Object> payload, long ttlMs) {
+        if (payload == null)
+            return;
+        if (cache.size() > CACHE_MAX_ENTRIES) {
+            cache.clear();
+        }
+        cache.put(key, new CacheEntry(System.currentTimeMillis() + ttlMs, payload));
     }
 
     /**
@@ -49,10 +98,24 @@ public class GeocodingController {
     @GetMapping("/geocode")
     public ResponseEntity<?> geocodeAddress(
             @RequestParam String address,
-            @RequestParam(required = false) String apikey) {
+            @RequestParam(required = false) String kind,
+            @RequestParam(required = false, defaultValue = "5") Integer results) {
         logger.info("Получен запрос на геокодирование адреса: {}", address);
 
-        String useApiKey = apikey != null && !apikey.isEmpty() ? apikey : defaultApiKey;
+        if (defaultApiKey == null || defaultApiKey.isBlank()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Yandex Maps API key is not configured on server");
+            return ResponseEntity.status(500).body(error);
+        }
+
+        String useApiKey = defaultApiKey;
+
+        String normalized = (address == null ? "" : address.trim().toLowerCase(Locale.ROOT));
+        String cacheKey = "geocode|" + (kind == null ? "" : kind) + "|" + results + "|" + normalized;
+        Map<String, Object> cached = cacheGet(cacheKey);
+        if (cached != null) {
+            return ResponseEntity.ok(cached);
+        }
 
         try {
             UriComponentsBuilder builder = UriComponentsBuilder
@@ -60,13 +123,11 @@ public class GeocodingController {
                     .queryParam("geocode", address)
                     .queryParam("apikey", useApiKey)
                     .queryParam("format", "json")
-                    .queryParam("results", 5);
+                    .queryParam("results", results);
 
-            builder.queryParam("kind", "house");
-            builder.queryParam("kind", "street");
-            builder.queryParam("kind", "metro");
-            builder.queryParam("kind", "district");
-            builder.queryParam("kind", "locality");
+            if (kind != null && !kind.isBlank()) {
+                builder.queryParam("kind", kind);
+            }
 
             String url = builder.build().toUriString();
 
@@ -77,6 +138,8 @@ public class GeocodingController {
             ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
             Map<String, Object> yandexResponse = response.getBody();
             Map<String, Object> result = processYandexGeocoderResponse(yandexResponse, address);
+
+            cachePut(cacheKey, result, CACHE_TTL_GEOCODE_MS);
 
             return ResponseEntity.ok(result);
         } catch (Exception e) {
@@ -94,16 +157,30 @@ public class GeocodingController {
     @GetMapping("/search")
     public ResponseEntity<?> searchPlaces(
             @RequestParam String query,
-            @RequestParam(required = false) String apikey) {
+            @RequestParam(required = false) String kind,
+            @RequestParam(required = false, defaultValue = "7") Integer results) {
         logger.info("Получен запрос на поиск места: {}", query);
 
-        String useApiKey = apikey != null && !apikey.isEmpty() ? apikey : defaultApiKey;
+        if (defaultApiKey == null || defaultApiKey.isBlank()) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Yandex Maps API key is not configured on server");
+            return ResponseEntity.status(500).body(error);
+        }
+
+        String useApiKey = defaultApiKey;
+
+        String normalized = (query == null ? "" : query.trim().toLowerCase(Locale.ROOT));
+        String cacheKey = "search|" + (kind == null ? "" : kind) + "|" + results + "|" + normalized;
+        Map<String, Object> cached = cacheGet(cacheKey);
+        if (cached != null) {
+            return ResponseEntity.ok(cached);
+        }
 
         try {
             List<Map<String, Object>> allResults = new ArrayList<>();
 
             try {
-                Map<String, Object> geocodeResults = searchAddresses(query, useApiKey);
+                Map<String, Object> geocodeResults = searchAddresses(query, useApiKey, kind, results);
                 List<Map<String, Object>> geoItems = (List<Map<String, Object>>) geocodeResults.getOrDefault(
                         "results",
                         new ArrayList<>());
@@ -113,6 +190,13 @@ public class GeocodingController {
                 }
             } catch (Exception e) {
                 logger.warn("Ошибка при поиске через геокодер: {}", e.getMessage());
+            }
+
+            // Если явно просят kind (например locality) — не смешиваем с biz-поиском.
+            if (kind != null && !kind.isBlank()) {
+                Map<String, Object> finalResult = new HashMap<>();
+                finalResult.put("results", allResults);
+                return ResponseEntity.ok(finalResult);
             }
 
             boolean isPossiblyOrganization = !query.matches(".*\\d+.*")
@@ -158,6 +242,7 @@ public class GeocodingController {
 
             Map<String, Object> finalResult = new HashMap<>();
             finalResult.put("results", allResults);
+            cachePut(cacheKey, finalResult, CACHE_TTL_SEARCH_MS);
             return ResponseEntity.ok(finalResult);
         } catch (Exception e) {
             logger.error("Ошибка при поиске места: {}", e.getMessage(), e);
@@ -168,23 +253,18 @@ public class GeocodingController {
         }
     }
 
-    private Map<String, Object> searchAddresses(String query, String apikey) throws Exception {
-        String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8);
-
+    private Map<String, Object> searchAddresses(String query, String apikey, String kind, Integer results)
+            throws Exception {
         UriComponentsBuilder builder = UriComponentsBuilder
                 .fromHttpUrl("https://geocode-maps.yandex.ru/1.x/")
-                .queryParam("geocode", encodedQuery)
+                .queryParam("geocode", query)
                 .queryParam("apikey", apikey)
                 .queryParam("format", "json")
-                .queryParam("results", 10)
-                .queryParam("kind", "house")
-                .queryParam("kind", "metro")
-                .queryParam("kind", "district")
-                .queryParam("kind", "locality")
-                .queryParam("kind", "street")
-                .queryParam("rspn", "1")
-                .queryParam("ll", "30.315644,59.939095")
-                .queryParam("spn", "0.552069,0.400552");
+                .queryParam("results", results != null ? results : 10);
+
+        if (kind != null && !kind.isBlank()) {
+            builder.queryParam("kind", kind);
+        }
 
         String url = builder.build().toUriString();
         HttpHeaders headers = new HttpHeaders();
@@ -223,11 +303,9 @@ public class GeocodingController {
 
     private Map<String, Object> searchBusinessesInternal(String query, String apikey, String bbox, Integer results)
             throws Exception {
-        String encodedQuery = URLEncoder.encode(query, StandardCharsets.UTF_8);
-
         UriComponentsBuilder builder = UriComponentsBuilder
                 .fromHttpUrl("https://search-maps.yandex.ru/v1/")
-                .queryParam("text", encodedQuery)
+                .queryParam("text", query)
                 .queryParam("apikey", apikey)
                 .queryParam("lang", "ru_RU")
                 .queryParam("type", "biz")
@@ -235,10 +313,6 @@ public class GeocodingController {
 
         if (bbox != null && !bbox.isEmpty()) {
             builder.queryParam("bbox", bbox);
-        } else {
-            builder.queryParam("ll", "30.315644,59.939095");
-            builder.queryParam("spn", "0.552069,0.400552");
-            builder.queryParam("rspn", "1");
         }
 
         String url = builder.build().toUriString();

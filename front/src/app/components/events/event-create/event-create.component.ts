@@ -3,14 +3,11 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { EventService } from '../../../services/event.service';
-import { MapsService, Place } from '../../../services/maps.service';
-import { ProxyService } from '../../../services/proxy.service';
 import { AuthService } from '../../../services/auth.service';
 import { Event } from '../../../models/event.model';
 import { HttpClientModule } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
-import { firstValueFrom } from 'rxjs';
-import { findUniversity } from '@app/helpers/educational-institutions';
+import { AddressInputComponent } from '../../shared/address-input/address-input.component';
 
 @Component({
     selector: 'app-event-create',
@@ -21,7 +18,8 @@ import { findUniversity } from '@app/helpers/educational-institutions';
         CommonModule,
         RouterModule,
         ReactiveFormsModule,
-        HttpClientModule
+        HttpClientModule,
+        AddressInputComponent
     ]
 })
 export class EventCreateComponent implements OnInit {
@@ -30,16 +28,11 @@ export class EventCreateComponent implements OnInit {
     errorMessage = '';
     imagePreviews: string[] = [];
     selectedImages: File[] = [];
-    mapInitialized = false;
-    private map: any;
-    private placemark: any;
     debugInfo: string = '';
 
     constructor(
         private formBuilder: FormBuilder,
         private eventService: EventService,
-        private mapsService: MapsService,
-        private proxyService: ProxyService,
         private authService: AuthService,
         private router: Router
     ) { }
@@ -52,7 +45,6 @@ export class EventCreateComponent implements OnInit {
         }
 
         this.initForm();
-        this.setupAddressAutocomplete();
 
         // Проверяем наличие API-ключа сразу
         try {
@@ -75,220 +67,12 @@ export class EventCreateComponent implements OnInit {
             endTime: ['', Validators.required],
             price: [0, [Validators.required, Validators.min(0)]],
             address: ['', Validators.required],
-            latitude: [''],
-            longitude: [''],
+            latitude: ['', Validators.required],
+            longitude: ['', Validators.required],
             maxParticipants: [50, [Validators.required, Validators.min(1)]],
             hasQuiz: [false],
             eventCategory: ['OTHER', Validators.required] // Добавлено поле категории
         });
-
-        // Initialize map
-        setTimeout(() => {
-            this.mapsService.createMap('map-preview', '', undefined, undefined)
-                .then((mapData) => {
-                    // Сохраняем ссылки на карту и метку
-                    this.map = mapData.map;
-                    this.placemark = mapData.placemark;
-                    this.mapInitialized = true;
-                })
-                .catch(err => {
-                    console.error('Error initializing map:', err);
-                });
-        }, 300);
-    }
-
-    setupAddressAutocomplete(): void {
-        setTimeout(() => {
-            this.mapsService.initAutocomplete('address-input', (place) => {
-                if (place) {
-                    this.eventForm.patchValue({
-                        address: place.address,
-                        latitude: place.latitude,
-                        longitude: place.longitude
-                    });
-
-                    // Обновляем карту используя метод updateMap вместо createMap напрямую
-                    this.updateMap({
-                        address: place.address,
-                        lat: place.latitude,
-                        lng: place.longitude
-                    });
-                }
-            }).catch(err => {
-                console.error('Error initializing autocomplete:', err);
-            });
-        }, 500);
-    }
-
-    findCoordinates(): void {
-        let searchQuery = this.eventForm.get('address')?.value;
-        this.errorMessage = '';
-        this.debugInfo = '';
-
-        // Проверяем, что запрос не пустой
-        if (!searchQuery || searchQuery.trim() === '') {
-            this.errorMessage = 'Пожалуйста, введите адрес или название места';
-            return;
-        }
-
-        // Исправление типичных опечаток
-        const commonMisspellings: Record<string, string> = {
-            "кронверский": "кронверкский",
-            "конверкский": "кронверкский",
-            "исакиевский": "исаакиевский",
-            "дворцоая": "дворцовая"
-        };
-
-        // Проверяем и корректируем опечатки
-        const words = searchQuery.toLowerCase().split(/\s+/);
-        const correctedWords = words.map((word: string | number) => commonMisspellings[word] || word);
-        const correctedQuery = correctedWords.join(' ');
-
-        // Если была исправлена опечатка, сообщаем пользователю
-        if (correctedQuery !== searchQuery.toLowerCase()) {
-            searchQuery = correctedQuery;
-            this.eventForm.patchValue({ address: correctedQuery });
-            this.debugInfo = `Исправлена опечатка в запросе: "${searchQuery}"\n`;
-        }
-
-        // Показываем индикатор загрузки
-        this.errorMessage = 'Поиск места...';
-
-        // Добавляем отладочную информацию
-        this.debugInfo += `Запрос: ${searchQuery}\nAPI-ключ: ${environment.mapsApiKey ? 'Задан' : 'Не задан'}\nВремя запроса: ${new Date().toLocaleTimeString()}`;
-
-        // Проверяем, не является ли запрос поиском вуза (ИТМО, СПбГУ, и т.д.)
-        const isEducationalQuery = this.isEducationalQuery(searchQuery);
-        if (isEducationalQuery) {
-            this.debugInfo += '\nОпределен поиск учебного заведения, используем специальный метод';
-        }
-
-        // Используем таймаут, чтобы UI обновился с сообщением о загрузке
-        setTimeout(() => {
-            // Выбираем метод поиска в зависимости от типа запроса
-            const searchPromise = this.mapsService.searchPlaces(searchQuery);
-
-            searchPromise
-                .then(places => {
-                    this.errorMessage = '';
-
-                    this.debugInfo += `\nНайдено мест: ${places.length}`;
-                    console.log('Результаты поиска:', places);
-
-                    if (places && places.length > 0) {
-                        const place = places[0];
-
-                        this.debugInfo += `\nВыбрано место: ${place.name || 'Без названия'}\nАдрес: ${place.address || 'Не указан'}\nКоординаты: ${place.lat}, ${place.lng}`;
-                        if (place.type) {
-                            this.debugInfo += `\nТип объекта: ${place.type}`;
-                        }
-
-                        this.eventForm.patchValue({
-                            address: place.address,
-                            latitude: place.lat,
-                            longitude: place.lng
-                        });
-
-                        // Обновляем карту
-                        this.updateMap(place);
-                    } else {
-                        this.errorMessage = 'Не удалось найти указанное место. Попробуйте более точный запрос.';
-                        this.debugInfo += '\nНе найдены результаты для данного запроса';
-                    }
-                })
-                .catch(err => {
-                    console.error('Search error:', err);
-
-                    // Улучшенная обработка ошибки с детальной информацией
-                    let errorDetails = '';
-                    try {
-                        errorDetails = typeof err === 'object' ? JSON.stringify(err, null, 2) : String(err);
-                    } catch (e) {
-                        errorDetails = 'Ошибка не может быть преобразована в строку';
-                    }
-
-                    this.debugInfo += `\nОшибка поиска: ${errorDetails}`;
-
-                    // Определяем тип ошибки и показываем соответствующее сообщение
-                    if (typeof err === 'object' && err && err.message === 'scriptError') {
-                        this.errorMessage = 'Ошибка доступа к API Яндекс Карт. Попробуйте обновить страницу или использовать VPN.';
-                        this.debugInfo += '\nВозможная причина: блокировка CORS';
-                    } else if (typeof err === 'string' && err.includes('apikey')) {
-                        this.errorMessage = 'Ошибка API-ключа Яндекс Карт.';
-                    } else if (typeof err === 'string' && (err.includes('status 400') || err.includes('Bad Request'))) {
-                        this.errorMessage = 'Некорректный запрос к API Яндекс Карт.';
-                    } else {
-                        this.errorMessage = 'Ошибка при поиске места. Попробуйте другой запрос.';
-                    }
-                });
-        }, 100);
-    }
-
-    /**
-     * Специальный поиск для учебных заведений
-     */
-    private searchEducationalInstitution(query: string): Promise<Place[]> {
-        // Сначала проверяем известные университеты
-        const knownUniversity = findUniversity(query);
-        if (knownUniversity) {
-            return Promise.resolve([{
-                name: knownUniversity.fullName,
-                address: knownUniversity.address,
-                lat: knownUniversity.coordinates.lat,
-                lng: knownUniversity.coordinates.lng,
-                type: 'Учебное заведение'
-            }]);
-        }
-
-        // Если не найден в известных, используем стандартный поиск
-        return this.mapsService.searchPlaces(query + ' университет')
-            .then(places => {
-                if (places && places.length > 0) {
-                    return places;
-                }
-                // Если не нашли с "университет", пробуем с "институт"
-                return this.mapsService.searchPlaces(query + ' институт');
-            })
-            .catch(() => {
-                // В случае ошибки, возвращаемся к обычному поиску
-                return this.mapsService.searchPlaces(query);
-            });
-    }
-
-    /**
-     * Проверяет, является ли запрос поиском учебного заведения
-     */
-    private isEducationalQuery(query: string): boolean {
-        const normalizedQuery = query.toLowerCase();
-        const educationalKeywords = [
-            'итмо', 'спбгу', 'спбпу', 'лэти', 'спбгэту', 'политех',
-            'университет', 'институт', 'академия', 'вуз'
-        ];
-
-        return educationalKeywords.some(keyword => normalizedQuery.includes(keyword));
-    }
-
-    // Выносим обновление карты в отдельный метод для лучшей читаемости кода
-    private updateMap(place: { address: string, lat: number, lng: number }): void {
-        // Сначала удалим текущую карту, если она существует
-        if (this.mapInitialized && this.map) {
-            this.mapsService.destroyMap('map-preview', this.map);
-            this.debugInfo += '\nПредыдущая карта удалена';
-        }
-
-        // Создаём новую карту
-        this.mapsService.createMap('map-preview', place.address, place.lat, place.lng)
-            .then((mapData) => {
-                this.map = mapData.map;
-                this.placemark = mapData.placemark;
-                this.mapInitialized = true;
-                this.debugInfo += '\nКарта успешно создана';
-            })
-            .catch(err => {
-                console.error('Error updating map:', err);
-                this.debugInfo += `\nОшибка при обновлении карты: ${err}`;
-                this.errorMessage = 'Место найдено, но не удалось отобразить карту';
-            });
     }
 
     onImagesSelected(event: any): void {

@@ -12,53 +12,29 @@ export const errorInterceptor: HttpInterceptorFn = (
 
     return next(request).pipe(
         catchError((error: HttpErrorResponse) => {
-            let errorMessage = 'Произошла неизвестная ошибка';
-
-            // Проверяем тип ошибки и получаем сообщение
-            if (error.error instanceof ErrorEvent) {
-                // Клиентская ошибка
-                errorMessage = `Ошибка: ${error.error.message}`;
-            } else {
-                // Серверная ошибка
-                if (error.error && error.error.error) {
-                    errorMessage = error.error.error;
-                } else if (error.error && typeof error.error === 'string') {
-                    try {
-                        const parsedError = JSON.parse(error.error);
-                        if (parsedError.error) {
-                            errorMessage = parsedError.error;
-                        } else if (parsedError.message) {
-                            errorMessage = parsedError.message;
-                        }
-                    } catch (e) {
-                        errorMessage = error.error;
-                    }
-                } else {
-                    switch (error.status) {
-                        case 400:
-                            errorMessage = 'Неверный запрос';
-                            break;
-                        case 401:
-                            errorMessage = 'Необходима авторизация';
-                            break;
-                        case 403:
-                            errorMessage = 'Доступ запрещен';
-                            break;
-                        case 404:
-                            errorMessage = 'Ресурс не найден';
-                            break;
-                        case 500:
-                            errorMessage = 'Внутренняя ошибка сервера';
-                            break;
-                        default:
-                            errorMessage = `Ошибка: ${error.status}`;
-                            break;
-                    }
+            const url = request.url || '';
+            const isGeoLookup = /\/geo\/(geocode|search)(\/biz)?(\?|$)/.test(url);
+            const path = (() => {
+                try {
+                    return new URL(url).pathname;
+                } catch {
+                    return url;
                 }
-            }
+            })();
 
-            // Показываем уведомление об ошибке
-            notificationService.error(errorMessage);
+            const errorMessage = notificationService.parseHttpError(
+                error,
+                `Ошибка запроса ${request.method} ${path}`
+            );
+
+            // Для геокодинга/поиска адресов не показываем тосты на каждую ошибку.
+            // Эти запросы могут падать из-за ключей/ограничений и часто обрабатываются фолбэком.
+            if (!isGeoLookup) {
+                notificationService.error(errorMessage);
+            } else {
+                // Оставляем след в консоли для отладки.
+                console.warn('Geo lookup request failed:', { url, status: error.status, error });
+            }
 
             // Важно: пробрасываем исходный HttpErrorResponse, чтобы вызывающий код мог
             // корректно обработать status (например, 401 для логина).

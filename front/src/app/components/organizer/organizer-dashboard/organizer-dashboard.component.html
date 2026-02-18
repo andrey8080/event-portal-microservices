@@ -97,11 +97,6 @@
                                             <i class="bi bi-eye me-2"></i> Смотреть все события
                                         </a>
                                     </div>
-                                    <div class="col-md-4">
-                                        <button class="btn btn-outline-secondary d-block" (click)="downloadReport()">
-                                            <i class="bi bi-file-earmark-excel me-2"></i> Скачать отчет
-                                        </button>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -224,9 +219,6 @@
                             </div>
                             <div class="col-md-6">
                                 <div *ngIf="selectedEventId" class="d-flex justify-content-end">
-                                    <button class="btn btn-outline-success me-2" (click)="exportParticipantsList()">
-                                        <i class="bi bi-file-earmark-excel me-1"></i> Экспорт списка
-                                    </button>
                                     <button class="btn btn-outline-primary" (click)="sendEmailToParticipants()">
                                         <i class="bi bi-envelope me-1"></i> Отправить уведомление
                                     </button>
@@ -280,10 +272,6 @@
                                             <button class="btn btn-sm btn-outline-primary me-1"
                                                 (click)="viewParticipantDetails(participant)">
                                                 <i class="bi bi-info-circle"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-danger"
-                                                (click)="removeParticipant(participant)">
-                                                <i class="bi bi-person-x"></i>
                                             </button>
                                         </td>
                                     </tr>

@@ -1,5 +1,29 @@
 // User profile component styles
 
+:host {
+    color: #e2e8f0;
+}
+
+h2 {
+    color: #e2e8f0;
+}
+
+.text-muted {
+    color: #94a3b8 !important;
+}
+
+.card-header.bg-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+}
+
+.card-footer.bg-white {
+    background-color: rgba(15, 23, 42, 0.72) !important;
+}
+
+.form-label {
+    color: #cbd5e1;
+}
+
 // Profile avatar
 .profile-avatar {
     position: relative;
@@ -34,15 +58,19 @@
 
 // Tab customizations
 .nav-tabs .nav-link {
-    color: #495057;
+    color: #cbd5e1;
+    border: 0;
 
     &.active {
         font-weight: 500;
-        color: #0d6efd;
+        color: #2563eb;
+        background-color: rgba(226, 232, 240, 0.95);
+        border-color: transparent;
     }
 
     &:hover:not(.active) {
-        color: #0d6efd;
+        color: #ffffff;
+        background-color: rgba(99, 102, 241, 0.16);
         border-color: transparent;
     }
 }
@@ -64,4 +92,41 @@
 
 .btn {
     margin-bottom: 3%;
+}
+
+@media (max-width: 992px) {
+    .nav-tabs {
+        gap: 0.35rem;
+        flex-wrap: wrap;
+    }
+
+    .nav-tabs .nav-link {
+        font-size: 0.92rem;
+        padding: 0.45rem 0.65rem;
+    }
+}
+
+@media (max-width: 768px) {
+    h2 {
+        font-size: 1.7rem;
+    }
+
+    .card-header h4 {
+        font-size: 1.25rem;
+    }
+
+    .card-body,
+    .card-footer {
+        padding: 1rem;
+    }
+
+    .btn {
+        width: 100%;
+        margin-bottom: 0.75rem;
+    }
+
+    .nav-tabs .nav-link {
+        width: 100%;
+        text-align: center;
+    }
 }

@@ -1,10 +1,10 @@
 <nav>
-    <!-- ...existing code... -->
+    <a routerLink="/" class="brand-logo">EventPortal</a>
     <ul>
-        <li *ngIf="!currentUser"><a routerLink="/login">Войти</a></li>
-        <li *ngIf="!currentUser"><a routerLink="/register">Зарегистрироваться</a></li>
-        <li *ngIf="currentUser"><a routerLink="/profile">Личный кабинет</a></li>
-        <li *ngIf="currentUser"><a (click)="logout()">Выйти</a></li>
+        <li *ngIf="!currentUser"><a routerLink="/login" routerLinkActive="active-link">Войти</a></li>
+        <li *ngIf="!currentUser"><a routerLink="/register" routerLinkActive="active-link" class="btn btn-primary"
+                style="color: white;">Зарегистрироваться</a></li>
+        <li *ngIf="currentUser"><a routerLink="/profile" routerLinkActive="active-link">Личный кабинет</a></li>
+        <li *ngIf="currentUser"><a (click)="logout()" style="cursor: pointer;">Выйти</a></li>
     </ul>
-    <!-- ...existing code... -->
 </nav>

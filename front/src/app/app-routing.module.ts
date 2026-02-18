@@ -13,12 +13,10 @@ import { UserEventsComponent } from './components/user/user-events/user-events.c
 // import { UserTicketsComponent } from './components/user/user-tickets/user-tickets.component';
 import { QuizCreateComponent } from './components/quiz/quiz-create/quiz-create.component';
 import { QuizPlayComponent } from './components/quiz/quiz-play/quiz-play.component';
-import { AdminDashboardComponent } from './components/admin/admin-dashboard/admin-dashboard.component';
 import { OrganizerDashboardComponent } from './components/organizer/organizer-dashboard/organizer-dashboard.component';
 import { NotFoundComponent } from './components/layout/not-found/not-found.component';
 
 import { AuthGuard } from './guards/auth.guard';
-import { AdminGuard } from './guards/admin.guard';
 import { OrganizerGuard } from './guards/organizer.guard';
 import { ApplicationConfig } from '@angular/core';
 
@@ -37,7 +35,6 @@ export const routes: Routes = [
   { path: 'events/:id/quiz/play', component: QuizPlayComponent, canActivate: [AuthGuard] },
   { path: 'quiz/:quizId', component: QuizPlayComponent, canActivate: [AuthGuard] },
   { path: 'events/:eventId/quiz', component: QuizPlayComponent, canActivate: [AuthGuard] },
-  { path: 'admin-dashboard', component: AdminDashboardComponent, canActivate: [AuthGuard, AdminGuard] },
   { path: 'organizer-dashboard', component: OrganizerDashboardComponent, canActivate: [AuthGuard, OrganizerGuard] },
   { path: '**', component: NotFoundComponent }
 ];

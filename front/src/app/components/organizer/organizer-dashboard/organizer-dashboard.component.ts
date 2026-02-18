@@ -177,26 +177,6 @@ export class OrganizerDashboardComponent implements OnInit {
         });
     }
 
-    downloadReport(): void {
-        this.organizerService.downloadReport().subscribe({
-            next: (data) => {
-                const blob = new Blob([data], { type: 'application/vnd.ms-excel' });
-                const url = window.URL.createObjectURL(blob);
-
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'organizer-report.xlsx';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-            },
-            error: (err) => {
-                console.error('Error downloading report:', err);
-            }
-        });
-    }
-
     // Events methods
     loadMyEvents(): void {
         this.isLoadingEvents = true;
@@ -252,21 +232,6 @@ export class OrganizerDashboardComponent implements OnInit {
     viewParticipantDetails(participant: User): void {
         this.selectedParticipant = participant;
         this.participantDetailsModal.show();
-    }
-
-    removeParticipant(participant: User): void {
-        if (!this.selectedEventId) return;
-
-        if (confirm(`Вы уверены, что хотите удалить участника ${participant.name} из события?`)) {
-            this.organizerService.removeParticipantFromEvent(this.selectedEventId, participant.id).subscribe({
-                next: () => {
-                    this.participants = this.participants.filter(p => p.id !== participant.id);
-                },
-                error: (err) => {
-                    console.error('Error removing participant:', err);
-                }
-            });
-        }
     }
 
     // Email methods
@@ -327,28 +292,6 @@ export class OrganizerDashboardComponent implements OnInit {
                 console.error('Error sending email:', err);
                 this.isSendingEmail = false;
                 alert('Произошла ошибка при отправке сообщения');
-            }
-        });
-    }
-
-    exportParticipantsList(): void {
-        if (!this.selectedEventId) return;
-
-        this.organizerService.exportParticipantsList(this.selectedEventId).subscribe({
-            next: (data) => {
-                const blob = new Blob([data], { type: 'application/vnd.ms-excel' });
-                const url = window.URL.createObjectURL(blob);
-
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `participants-event-${this.selectedEventId}.xlsx`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-            },
-            error: (err) => {
-                console.error('Error exporting participants list:', err);
             }
         });
     }

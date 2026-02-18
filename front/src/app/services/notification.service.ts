@@ -40,6 +40,91 @@ export class NotificationService {
 
   constructor(private http: HttpClient) { }
 
+  /**
+   * Преобразует Http/JS ошибку в понятный текст для пользователя.
+   */
+  parseHttpError(error: any, fallback = 'Произошла ошибка'): string {
+    if (!error) return fallback;
+
+    // Ошибка клиента/сети
+    if (error.error instanceof ErrorEvent) {
+      return error.error.message || 'Ошибка сети. Проверьте подключение к интернету.';
+    }
+
+    // Попытка вытащить данные из разных форматов ответа бэкенда
+    let payload: any = error.error;
+    if (typeof payload === 'string') {
+      try {
+        payload = JSON.parse(payload);
+      } catch {
+        payload = { message: payload };
+      }
+    }
+
+    const fromFields = [
+      payload?.error,
+      payload?.message,
+      payload?.detail,
+      payload?.title,
+      payload?.description,
+      error?.message
+    ].find(v => typeof v === 'string' && v.trim().length > 0);
+
+    if (fromFields) {
+      return String(fromFields);
+    }
+
+    // Валидация (часто приходит как объект errors)
+    if (payload?.errors && typeof payload.errors === 'object') {
+      const validationMessages: string[] = [];
+      Object.entries(payload.errors).forEach(([field, value]) => {
+        if (Array.isArray(value)) {
+          value.forEach(msg => validationMessages.push(`${field}: ${msg}`));
+        } else if (typeof value === 'string') {
+          validationMessages.push(`${field}: ${value}`);
+        }
+      });
+      if (validationMessages.length > 0) {
+        return `Ошибка валидации: ${validationMessages.join('; ')}`;
+      }
+    }
+
+    // fallback по статусам
+    switch (error.status) {
+      case 0:
+        return 'Сервер недоступен. Проверьте сеть или URL API.';
+      case 400:
+        return 'Некорректные данные запроса.';
+      case 401:
+        return 'Требуется авторизация. Войдите в аккаунт.';
+      case 403:
+        return 'Недостаточно прав для выполнения операции.';
+      case 404:
+        return 'Запрашиваемый ресурс не найден.';
+      case 409:
+        return 'Конфликт данных. Возможно, запись уже существует.';
+      case 422:
+        return 'Данные не прошли валидацию.';
+      case 429:
+        return 'Слишком много запросов. Попробуйте позже.';
+      case 500:
+        return 'Внутренняя ошибка сервера.';
+      case 502:
+      case 503:
+      case 504:
+        return 'Сервис временно недоступен. Попробуйте позже.';
+      default:
+        return fallback;
+    }
+  }
+
+  /**
+   * Показать тост с текстом, собранным из ошибки.
+   */
+  errorFromHttp(error: any, fallback = 'Произошла ошибка', autoClose = true, timeout = 7000): number {
+    return this.error(this.parseHttpError(error, fallback), autoClose, timeout);
+  }
+
   sendEventNotification(notification: NotificationData): Observable<any> {
     const token = localStorage.getItem(this.tokenKey);
     if (!token) {

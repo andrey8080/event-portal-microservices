@@ -1,17 +1,18 @@
 footer {
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    border-top: 1px solid rgba(99, 102, 241, 0.2);
 
     a {
         transition: color 0.2s;
+        color: #cbd5e1;
 
         &:hover {
-            color: #0d6efd !important;
+            color: #ffffff !important;
         }
     }
 
     h5,
     h6 {
-        color: #343a40;
+        color: #e2e8f0;
         font-weight: 600;
     }
 
@@ -28,7 +29,8 @@ footer {
 }
 
 .site-footer {
-    background-color: #f8f9fa;
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.78) 100%);
+    backdrop-filter: blur(8px);
     padding: 40px 0 20px;
     margin-top: 60px;
 }
@@ -43,7 +45,9 @@ footer {
 .footer-logo a {
     font-size: 20px;
     font-weight: bold;
-    color: #333;
+    background: linear-gradient(135deg, #6366f1 0%, #ec4899 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
     text-decoration: none;
 }
 
@@ -82,8 +86,8 @@ footer {
 
 .copyright {
     text-align: center;
-    color: #6c757d;
+    color: #94a3b8;
     font-size: 14px;
-    border-top: 1px solid #e9ecef;
+    border-top: 1px solid rgba(148, 163, 184, 0.18);
     padding-top: 20px;
 }

@@ -2,10 +2,12 @@ package back.gateway.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -69,7 +71,9 @@ public class ProxyController {
             "/events/**",
             "/quizzes/**",
             "/api/geo/**",
-            "/geo/**"
+            "/geo/**",
+            "/api/address/**",
+            "/address/**"
     })
     public ResponseEntity<byte[]> proxy(HttpServletRequest request) throws IOException {
         String requestPath = request.getRequestURI();
@@ -78,13 +82,19 @@ public class ProxyController {
             return ResponseEntity.notFound().build();
         }
 
-        String queryString = request.getQueryString();
-        String targetUrl = baseUrl + requestPath
-                + (queryString == null || queryString.isBlank() ? "" : "?" + queryString);
+        // Важно: прокидываем query string прозрачно.
+        // Для кириллицы Servlet контейнер может декодировать параметры не тем charset,
+        // а RestTemplate при работе со String-URL может повторно кодировать шаблон.
+        // Чтобы избежать и проблем с charset, и двойного кодирования, собираем URI
+        // из сырого percent-encoded query и передаём в RestTemplate именно URI.
+        String rawQuery = request.getQueryString();
+        URI targetUri = (rawQuery == null || rawQuery.isBlank())
+                ? URI.create(baseUrl + requestPath)
+                : URI.create(baseUrl + requestPath + "?" + rawQuery);
 
         HttpMethod method;
         try {
-            method = HttpMethod.valueOf(request.getMethod());
+            method = HttpMethod.valueOf(Objects.requireNonNull(request.getMethod()));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.status(405).build();
         }
@@ -95,7 +105,8 @@ public class ProxyController {
         HttpEntity<byte[]> entity = new HttpEntity<>(body, headers);
 
         try {
-            ResponseEntity<byte[]> response = restTemplate.exchange(targetUrl, method, entity, byte[].class);
+            ResponseEntity<byte[]> response = restTemplate.exchange(Objects.requireNonNull(targetUri), method, entity,
+                    byte[].class);
             HttpHeaders responseHeaders = filterHopByHopHeaders(response.getHeaders());
             return ResponseEntity.status(response.getStatusCode()).headers(responseHeaders).body(response.getBody());
         } catch (HttpStatusCodeException ex) {
@@ -115,7 +126,8 @@ public class ProxyController {
             return eventBaseUrl;
         if (path.startsWith("/quizzes"))
             return quizBaseUrl;
-        if (path.startsWith("/api/geo") || path.startsWith("/geo"))
+        if (path.startsWith("/api/geo") || path.startsWith("/geo") || path.startsWith("/api/address")
+                || path.startsWith("/address"))
             return geoBaseUrl;
         return null;
     }

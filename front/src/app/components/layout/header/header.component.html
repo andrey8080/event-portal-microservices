@@ -13,9 +13,8 @@
                     <li *ngIf="isAuthenticated && isOrganizer"><a routerLink="/organizer-dashboard">Панель
                             организатора</a>
                     </li>
-                    <li *ngIf="isAuthenticated && isAdmin"><a routerLink="/admin-dashboard">Админ-панель</a></li>
                     <li *ngIf="isAuthenticated">
-                        <button class="btn btn-outline-secondary" (click)="authService.logout()">Выход</button>
+                        <button class="logout-link" (click)="authService.logout()">Выход</button>
                     </li>
                 </ul>
             </nav>

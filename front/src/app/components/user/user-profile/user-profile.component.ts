@@ -61,7 +61,7 @@ export class UserProfileComponent implements OnInit {
         if (this.user?.id !== undefined) {
             this.userService.getUserTickets(this.user.id).subscribe({
                 next: (events) => (this.userEvents = events),
-                error: () => this.notificationService.error('Ошибка загрузки билетов')
+                error: (err) => this.notificationService.errorFromHttp(err, 'Не удалось загрузить билеты')
             });
         } else {
             this.notificationService.error('Ошибка: пользователь не найден');
@@ -70,7 +70,7 @@ export class UserProfileComponent implements OnInit {
 
 
     updateQrCodeUrl(eventId: number, userEmail: string): void {
-    this.qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=eventId=${eventId},email=${userEmail}`;
+        this.qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=eventId=${eventId},email=${userEmail}`;
     }
 
 
@@ -103,7 +103,7 @@ export class UserProfileComponent implements OnInit {
             email: userData.email || '',
             phoneNumber: userData.phoneNumber || '',
             // role: userData.role || ''  // Заполняем роль
-           
+
         });
         console.log('Заполнили форму:', this.role);
         this.profileForm.markAsPristine();
@@ -126,7 +126,7 @@ export class UserProfileComponent implements OnInit {
                     this.notificationService.success('Профиль обновлен');
                     this.authService.updateCurrentUser({ ...this.user, ...response });
                 },
-                error: () => this.notificationService.error('Ошибка обновления профиля')
+                error: (err) => this.notificationService.errorFromHttp(err, 'Не удалось обновить профиль')
             });
     }
 
@@ -145,7 +145,7 @@ export class UserProfileComponent implements OnInit {
                     this.notificationService.success('Пароль успешно изменен');
                     this.passwordForm.reset();
                 },
-                error: () => this.notificationService.error('Ошибка обновления пароля')
+                error: (err) => this.notificationService.errorFromHttp(err, 'Не удалось изменить пароль')
             });
     }
 
@@ -154,7 +154,7 @@ export class UserProfileComponent implements OnInit {
 
         this.authService.deleteAccount().subscribe({
             next: () => this.router.navigate(['/']),
-            error: () => this.notificationService.error('Ошибка при удалении аккаунта')
+            error: (err) => this.notificationService.errorFromHttp(err, 'Не удалось удалить аккаунт')
         });
     }
 
@@ -166,7 +166,7 @@ export class UserProfileComponent implements OnInit {
                 this.authService.updateCurrentUser({ ...this.user, role: UserRole.ORGANIZER } as User);
             }
         });
-           
+
     }
 
     passwordsNotMatch(): boolean {

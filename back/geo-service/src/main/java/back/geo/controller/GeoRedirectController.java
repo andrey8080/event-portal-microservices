@@ -25,15 +25,17 @@ public class GeoRedirectController {
     @GetMapping("/search")
     public ResponseEntity<?> searchPlaces(
             @RequestParam String query,
-            @RequestParam(required = false) String apikey) {
-        return geocodingController.searchPlaces(query, apikey);
+            @RequestParam(required = false) String kind,
+            @RequestParam(required = false, defaultValue = "7") Integer results) {
+        return geocodingController.searchPlaces(query, kind, results);
     }
 
     @GetMapping("/geocode")
     public ResponseEntity<?> geocodeAddress(
             @RequestParam String address,
-            @RequestParam(required = false) String apikey) {
-        return geocodingController.geocodeAddress(address, apikey);
+            @RequestParam(required = false) String kind,
+            @RequestParam(required = false, defaultValue = "5") Integer results) {
+        return geocodingController.geocodeAddress(address, kind, results);
     }
 
     @GetMapping("/search/biz")

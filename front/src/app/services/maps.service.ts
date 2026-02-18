@@ -1,7 +1,5 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
-import { ProxyService } from './proxy.service';
-import { firstValueFrom } from 'rxjs';
 import { findUniversity, SAINT_PETERSBURG_UNIVERSITIES } from '../helpers/educational-institutions';
 import { findKnownPlace, SAINT_PETERSBURG_PLACES } from '../helpers/places-data';
 
@@ -15,6 +13,13 @@ export interface Place {
     lng: number;         // Долгота
     type?: string;       // Тип места (опциональный)
     precision?: string;  // Точность геокодирования
+    kind?: string;       // kind из геокодера (house/street/locality/...)
+}
+
+export interface GeocodeOptions {
+    kind?: string;
+    boundedBy?: number[][];
+    strictBounds?: boolean;
 }
 
 @Injectable({
@@ -25,7 +30,7 @@ export class MapsService {
     private apiKey: string;
     private searchCache = new Map<string, Place[]>();  // Кэш результатов поиска
 
-    constructor(private proxyService: ProxyService) {
+    constructor() {
         this.apiKey = environment.mapsApiKey || '';
         if (!this.apiKey) {
             console.error('API ключ Яндекс Карт не указан в environment.ts. Добавьте ключ: mapsApiKey');
@@ -37,7 +42,7 @@ export class MapsService {
      */
     private loadApi(): Promise<boolean> {
         // Если API уже загружен, возвращаем true
-        if (this.apiLoaded && window.ymaps) {
+        if (this.apiLoaded && (window as any).ymaps) {
             return Promise.resolve(true);
         }
 
@@ -49,8 +54,8 @@ export class MapsService {
             }
 
             // Если объект ymaps уже существует, значит скрипт уже был загружен
-            if (window.ymaps) {
-                window.ymaps.ready(() => {
+            if ((window as any).ymaps) {
+                (window as any).ymaps.ready(() => {
                     this.apiLoaded = true;
                     resolve(true);
                 });
@@ -60,14 +65,14 @@ export class MapsService {
                 script.type = 'text/javascript';
                 script.crossOrigin = "anonymous";
 
-                // Указываем все необходимые модули при загрузке API
-                const timestamp = new Date().getTime(); // Для предотвращения кеширования
-                script.src = `https://api-maps.yandex.ru/2.1/?apikey=${this.apiKey}&lang=ru_RU&load=Map,Placemark,control.ZoomControl,control.SearchControl,SuggestView&_=${timestamp}`;
+                // Указываем все необходимые модули при загрузке API.
+                // Не добавляем cache-busting параметры, чтобы браузер мог кешировать скрипт.
+                script.src = `https://api-maps.yandex.ru/2.1/?apikey=${this.apiKey}&lang=ru_RU&load=Map,Placemark,control.ZoomControl,control.SearchControl,SuggestView,suggest`;
 
                 script.onload = () => {
                     // После загрузки скрипта ждём готовности API
-                    if (window.ymaps) {
-                        window.ymaps.ready(() => {
+                    if ((window as any).ymaps) {
+                        (window as any).ymaps.ready(() => {
                             this.apiLoaded = true;
                             resolve(true);
                         });
@@ -84,6 +89,114 @@ export class MapsService {
                 document.head.appendChild(script);
             }
         });
+    }
+
+    private getYmaps(): any | null {
+        return (window as any)?.ymaps || null;
+    }
+
+    /**
+     * Быстрые подсказки для автодополнения (без геокодирования).
+     * Работает напрямую через Yandex Maps JS API.
+     */
+    async suggest(query: string): Promise<string[]> {
+        const q = (query || '').trim();
+        if (q.length < 2) return [];
+
+        await this.loadApi();
+        const ymaps = this.getYmaps();
+        if (!ymaps?.suggest) {
+            return [];
+        }
+
+        const items = await ymaps.suggest(q);
+        if (!Array.isArray(items)) return [];
+
+        return items
+            .map((it: any) => it?.value || it?.displayName || it?.title || String(it))
+            .filter((v: any) => typeof v === 'string' && v.trim().length > 0);
+    }
+
+    /**
+     * Геокодирование через Yandex Maps JS API (динамический поиск по любым адресам).
+     */
+    async geocodePlaces(address: string, maxResults = 5, options?: GeocodeOptions): Promise<Place[]> {
+        const query = (address || '').trim();
+        if (query.length < 2) return [];
+
+        await this.loadApi();
+        const ymaps = this.getYmaps();
+        if (!ymaps?.geocode) {
+            return [];
+        }
+
+        const geocodeOptions: any = {
+            results: maxResults,
+            ...(options?.kind ? { kind: options.kind } : {}),
+            ...(options?.boundedBy ? { boundedBy: options.boundedBy } : {}),
+            ...(options?.strictBounds ? { strictBounds: true } : {}),
+        };
+
+        const response = await ymaps.geocode(query, geocodeOptions);
+        const geoObjects = response?.geoObjects;
+        if (!geoObjects || typeof geoObjects.each !== 'function') {
+            return [];
+        }
+
+        const places: Place[] = [];
+        geoObjects.each((obj: any) => {
+            const coords = obj?.geometry?.getCoordinates?.();
+            if (!Array.isArray(coords) || coords.length < 2) return;
+
+            const name = obj?.properties?.get?.('name') || query;
+            const fullAddress = obj?.getAddressLine?.() || obj?.properties?.get?.('text') || name;
+
+            const kind = obj?.properties?.get?.('metaDataProperty.GeocoderMetaData.kind');
+            const precision = obj?.properties?.get?.('metaDataProperty.GeocoderMetaData.precision');
+
+            places.push({
+                name,
+                address: fullAddress,
+                // В Yandex Maps JS API coords = [lat, lng]
+                lat: Number(coords[0]),
+                lng: Number(coords[1]),
+                type: kind ? this.mapKindToType(String(kind)) : undefined,
+                precision: precision ? String(precision) : undefined,
+                kind: kind ? String(kind) : undefined,
+            });
+        });
+
+        return places.filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+    }
+
+    /**
+     * Подбор только населённых пунктов (город/посёлок и т.п.) для первой стадии автодополнения.
+     */
+    async geocodeLocalities(query: string, maxResults = 7): Promise<Place[]> {
+        const list = await this.geocodePlaces(query, maxResults, { kind: 'locality' });
+        // На всякий случай отфильтруем, если геокодер вернул не locality
+        return list.filter(p => p.kind === 'locality');
+    }
+
+    private mapKindToType(kind: string): string {
+        switch (kind) {
+            case 'house':
+                return 'Здание';
+            case 'street':
+                return 'Улица';
+            case 'metro':
+                return 'Станция метро';
+            case 'district':
+                return 'Район';
+            case 'locality':
+                return 'Населённый пункт';
+            case 'province':
+                return 'Регион';
+            case 'country':
+                return 'Страна';
+            default:
+                return 'Место';
+        }
     }
 
     /**
@@ -134,76 +247,17 @@ export class MapsService {
         try {
             console.log('Начинаем адаптивный поиск для:', query);
 
-            // Пробуем разные стратегии поиска, начиная с наиболее вероятных
-
-            // 1. Если это похоже на адрес (улица + номер дома)
-            if (this.looksLikeAddress(query)) {
-                console.log('Запрос похож на адрес, начинаем с геокодирования');
-                try {
-                    const response = await firstValueFrom(this.proxyService.geocodeAddress(query));
-                    if (response && response.results && response.results.length > 0) {
-                        const places = this.processResults(response.results, query);
-                        this.searchCache.set(normalizedQuery, places);
-                        return places;
-                    }
-                } catch (error) {
-                    console.warn('Ошибка при геокодировании адреса:', error);
-                    // Продолжаем выполнение и пробуем другие методы
+            // 0. Динамический поиск по любым адресам через Yandex Maps JS API.
+            // Это снижает нагрузку на наш бэкенд и избегает 500 при отсутствующем ключе на сервере.
+            try {
+                const ymapsPlaces = await this.geocodePlaces(query, 7);
+                if (ymapsPlaces.length > 0) {
+                    this.searchCache.set(normalizedQuery, ymapsPlaces);
+                    return ymapsPlaces;
                 }
+            } catch (e) {
+                // Если JS API недоступен, возвращаем пустой список
             }
-
-            // 2. Если это похоже на название организации
-            if (this.looksLikeOrganization(query)) {
-                console.log('Запрос похож на название организации, выполняем бизнес-поиск');
-                try {
-                    const bizResponse = await firstValueFrom(this.proxyService.searchBusinesses(query));
-                    if (bizResponse && bizResponse.results && bizResponse.results.length > 0) {
-                        const places = this.processResults(bizResponse.results, query);
-                        this.searchCache.set(normalizedQuery, places);
-                        return places;
-                    }
-                } catch (error) {
-                    console.warn('Ошибка при поиске организации:', error);
-                }
-            }
-
-            // 4. Универсальный поиск
-            console.log('Выполняем универсальный поиск через прокси');
-            const response = await firstValueFrom(this.proxyService.searchPlaces(query));
-
-            if (response && response.results && response.results.length > 0) {
-                const places = this.processResults(response.results, query);
-                this.searchCache.set(normalizedQuery, places);
-                return places;
-            }
-
-            // 5. Поиск по частям запроса
-            if (query.includes(' ')) {
-                console.log('Пробуем поиск по частям запроса');
-                const words = query.split(' ');
-                // Пробуем искать по первому слову + номер (если есть)
-                const numbers = words.filter(word => /^\d+$/.test(word));
-                const firstWord = words[0];
-
-                if (firstWord && firstWord.length > 2) {
-                    let searchTerm = firstWord;
-                    if (numbers.length > 0) {
-                        searchTerm += ' ' + numbers[0];
-                    }
-
-                    try {
-                        const partialResponse = await firstValueFrom(this.proxyService.searchPlaces(searchTerm));
-                        if (partialResponse && partialResponse.results && partialResponse.results.length > 0) {
-                            const places = this.processResults(partialResponse.results, query);
-                            this.searchCache.set(normalizedQuery, places);
-                            return places;
-                        }
-                    } catch (error) {
-                        console.warn('Ошибка при поиске по части запроса:', error);
-                    }
-                }
-            }
-
             // Если ничего не нашли, возвращаем пустой массив
             return [];
         } catch (error) {
@@ -291,17 +345,10 @@ export class MapsService {
         }
 
         try {
-            // Используем прокси для геокодирования
-            const response = await firstValueFrom(this.proxyService.geocodeAddress(address));
-
-            if (response && response.results && response.results.length > 0) {
-                const firstResult = response.results[0];
-                if (firstResult.lat && firstResult.lng) {
-                    return {
-                        lat: firstResult.lat,
-                        lng: firstResult.lng
-                    };
-                }
+            // Сначала пробуем JS API (динамический поиск)
+            const places = await this.geocodePlaces(address, 1);
+            if (places.length > 0) {
+                return { lat: places[0].lat, lng: places[0].lng };
             }
             throw new Error('Не удалось определить координаты для указанного адреса');
         } catch (error) {
@@ -319,13 +366,18 @@ export class MapsService {
         try {
             await this.loadApi();
 
+            const ymapsApi = this.getYmaps();
+            if (!ymapsApi) {
+                throw new Error('Yandex Maps API не загружен');
+            }
+
             const inputElement = document.getElementById(inputElementId) as HTMLInputElement;
             if (!inputElement) {
                 throw new Error(`Элемент с ID ${inputElementId} не найден`);
             }
 
             // Создаем объект SuggestView для автодополнения
-            const suggestView = new window.ymaps.SuggestView(inputElementId);
+            const suggestView = new ymapsApi.SuggestView(inputElementId);
 
             // Подписываемся на событие выбора элемента из списка
             suggestView.events.add('select', async (e: any) => {
@@ -394,15 +446,21 @@ export class MapsService {
             // Загружаем API и создаем карту
             await this.loadApi();
 
+            const ymapsApi = this.getYmaps();
+            if (!ymapsApi) {
+                throw new Error('Yandex Maps API не загружен');
+            }
+
             // Инициализация карты
-            const map = new window.ymaps.Map(elementId, {
+            // В Yandex Maps JS API порядок координат: [lat, lng]
+            const map = new ymapsApi.Map(elementId, {
                 center: [lat, lng],
                 zoom: 15,
                 controls: ['zoomControl']
             });
 
             // Добавляем метку на карту
-            const placemark = new window.ymaps.Placemark([lat, lng], {
+            const placemark = new ymapsApi.Placemark([lat, lng], {
                 balloonContent: address
             }, {
                 preset: 'islands#redDotIcon'
