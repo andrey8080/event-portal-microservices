@@ -2,6 +2,8 @@
 
 Full-stack платформа для создания, публикации и проведения мероприятий. Backend построен как набор независимых Spring Boot микросервисов, frontend — SPA на Angular.
 
+Проект развился из [монолитной версии Event Portal](https://github.com/andrey8080/event-portal-monolit): текущий репозиторий показывает следующий этап архитектуры с разделением backend на сервисы, единым gateway и независимыми CI-пайплайнами для frontend и backend.
+
 [![Backend CI](https://github.com/andrey8080/event-portal-microservices/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/andrey8080/event-portal-microservices/actions/workflows/backend-ci.yml)
 [![Frontend CI](https://github.com/andrey8080/event-portal-microservices/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/andrey8080/event-portal-microservices/actions/workflows/frontend-ci.yml)
 
